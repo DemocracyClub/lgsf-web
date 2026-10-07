@@ -1,0 +1,18 @@
+# python cache files
+__pycache__/
+*.pyc
+
+# venv
+.venv
+
+# build artifacts
+build/
+dist/
+*.egg-info/
+
+# test coverage
+.coverage
+coverage.*
+
+# dotenv
+.env

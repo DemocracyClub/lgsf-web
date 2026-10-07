@@ -1,0 +1,44 @@
+[project]
+name = "lgsf-web"
+version = "0.0.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = "==3.12.*"
+dependencies = [
+    "django==5.2.18",
+    "python-dotenv==1.2.2",
+]
+
+[dependency-groups]
+cdk = []
+production = [
+    "gunicorn==26.2.0",
+    "sentry-sdk==2.71.0",
+    "gevent==26.9.0",
+]
+dev = [
+    "django-debug-toolbar==8.0.0",
+    "ruff==0.16.10",
+    "djhtml==3.0.11",
+]
+
+[tool.uv]
+package = false
+required-version = "==0.11.*"
+environments = [
+    "platform_python_implementation == 'CPython'"
+]
+
+[tool.ruff]
+line-length = 80
+extend-exclude = ["lsgf_web/settings/local.py"]
+
+[tool.ruff.lint]
+ignore = ["E501"]
+extend-select = [
+    "I",
+    "C4",
+    "SIM",
+    "Q003",
+    "RET",
+]
