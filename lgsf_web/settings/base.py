@@ -25,18 +25,26 @@ def root(*x):
 sys.path.insert(0, str(root("apps")))
 
 
+# Set DC_ENVIRONMENT
+DC_ENVIRONMENT = os.environ.get("DC_ENVIRONMENT", "local")
+
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = (
-    "django-insecure-rl-1)4db30sr5mq@no3q4r#^!kbutwid(pl_e803(lf)&(%6-p"
+SECRET_KEY = os.environ.get(
+    "SECRET_KEY",
+    "django-insecure-rl-1)4db30sr5mq@no3q4r#^!kbutwid(pl_e803(lf)&(%6-p",
 )
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    os.environ.get("FQDN", None),
+    "localhost",
+    "127.0.0.1",
+]
 
 
 # Application definition
@@ -144,3 +152,21 @@ STATIC_URL = "static/"
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+if sentry_dsn := os.environ.get("SENTRY_DSN"):
+    import sentry_sdk
+    from sentry_sdk.integrations import django
+    from sentry_sdk.integrations.logging import ignore_logger
+
+    ignore_logger("django.security.DisallowedHost")
+
+    sentry_sdk.init(
+        dsn=sentry_dsn,
+        # Disable performance monitoring
+        enable_tracing=False,
+        integrations=[
+            django.DjangoIntegration(),
+        ],
+        environment=DC_ENVIRONMENT,
+    )
