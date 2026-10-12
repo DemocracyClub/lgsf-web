@@ -9,6 +9,7 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+lgsf_web/static/
 
 # test coverage
 .coverage
@@ -16,3 +17,10 @@ coverage.*
 
 # dotenv
 .env
+
+# node
+node_modules/
+
+# cdk gubbins
+cdk.out/**
+cdk.context.json

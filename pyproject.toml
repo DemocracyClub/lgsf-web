@@ -5,15 +5,22 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = "==3.12.*"
 dependencies = [
+    "boto3==1.43.112",
     "django==5.2.18",
     "python-dotenv==1.2.2",
     "psycopg[binary]==3.3.6",
+    "requests==2.34.2",
+    "dc-django-utils",
 ]
 
 [dependency-groups]
-cdk = []
+cdk = [
+    "aws-cdk-lib==2.253.0",
+    "boto3==1.43.112",
+    "constructs==10.5.0",
+]
 production = [
-    "gunicorn==26.2.0",
+    "gunicorn[gevent]==26.2.0",
     "sentry-sdk==2.71.0",
     "gevent==26.9.0",
 ]
@@ -22,6 +29,9 @@ dev = [
     "ruff==0.16.10",
     "djhtml==3.0.11",
 ]
+
+[tool.uv.sources]
+dc-django-utils = { git = "https://github.com/DemocracyClub/dc_django_utils.git", tag = "8.0.5" }
 
 [tool.uv]
 package = false
@@ -32,7 +42,7 @@ environments = [
 
 [tool.ruff]
 line-length = 80
-extend-exclude = ["lsgf_web/settings/local.py"]
+extend-exclude = ["lgsf_web/settings/local.py"]
 
 [tool.ruff.lint]
 ignore = ["E501"]

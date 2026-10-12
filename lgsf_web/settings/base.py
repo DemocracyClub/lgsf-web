@@ -14,6 +14,10 @@ import os
 import sys
 from pathlib import Path
 
+from dc_utils.settings.pipeline import *
+from dc_utils.settings.pipeline import get_pipeline_settings
+from dc_utils.settings.whitenoise import whitenoise_add_middleware
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -45,6 +49,8 @@ ALLOWED_HOSTS = [
     "localhost",
     "127.0.0.1",
 ]
+
+USE_X_FORWARDED_HOST = True
 
 
 # Application definition
@@ -101,7 +107,7 @@ WSGI_APPLICATION = "lgsf_web.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.contrib.gis.db.backends.postgis",
+        "ENGINE": "django.db.backends.postgresql",
         "NAME": os.environ.get("DB_NAME"),
         "USER": os.environ.get("DB_USER"),
         "PASSWORD": os.environ.get("DB_PASSWORD"),
@@ -146,7 +152,13 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
+STATIC_ROOT = root("static")
+
+MIDDLEWARE = whitenoise_add_middleware(MIDDLEWARE)
+WHITENOISE_MAX_AGE = 60 * 60 * 24 * 40
+
+PIPELINE = get_pipeline_settings()
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field

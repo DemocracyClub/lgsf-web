@@ -1,0 +1,164 @@
+version: 2.1
+
+jobs:
+  test:
+    docker:
+      - image: cimg/python:3.12-node
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/repo/
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+      - run:
+          name: Install UV
+          command: ./deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install Python dependencies
+          command: uv sync
+      - run:
+          name: Run code checks
+          command: |
+            uv run ruff format . --check
+            uv run ruff check .
+      # TODO: set up pytest + run it once we have tests
+
+  cdk_synth:
+    docker:
+      - image: cimg/python:3.12-node
+    working_directory: ~/repo
+    parameters:
+      dc-environment:
+        type: enum
+        enum: [development, staging, production]
+    environment:
+      DC_ENVIRONMENT: <<parameters.dc-environment>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/repo/
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+            - v1-node-{{ checksum "package.json" }}
+      - run:
+          name: Install UV
+          command: ./deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install Python dependencies
+          command: uv sync --group cdk
+      - run:
+          name: Install Node.js dependencies
+          command: npm ci
+      - run:
+          name: CDK synth
+          command: uv run npx cdk synth
+      - save_cache:
+          when: on_success
+          paths:
+            - node_modules
+          key: v1-node-{{ checksum "package.json" }}
+      - persist_to_workspace:
+          root: ~/repo/
+          paths: [cdk.out/]
+
+  cdk_deploy:
+    docker:
+      - image: cimg/python:3.12-node
+    working_directory: ~/repo
+    parameters:
+      dc-environment:
+        type: enum
+        enum: [development, staging, production]
+    environment:
+      DC_ENVIRONMENT: <<parameters.dc-environment>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/repo/
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+            - v1-node-{{ checksum "package.json" }}
+      - run:
+          name: Install UV
+          command: ./deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install Python dependencies
+          command: uv sync --group cdk
+      - run:
+          name: Install Node.js dependencies
+          command: npm ci
+      - run:
+          name: CDK deploy
+          command: uv run npx cdk deploy --require-approval never --all
+
+  code_deploy:
+    docker:
+      - image: cimg/python:3.12-node
+    working_directory: ~/repo
+    parameters:
+      dc-environment:
+        type: enum
+        enum: [development, staging, production]
+    environment:
+      DC_ENVIRONMENT: <<parameters.dc-environment>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/repo/
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+      - run:
+          name: Install UV
+          command: ./deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install Python dependencies
+          command: uv sync --group cdk
+      - run:
+          name: "Code Deploy: Create deployment group"
+          command: |
+            uv run python deploy/create_deployment_group.py
+      - run:
+          name: "Code Deploy: Create deployment"
+          command: |
+            COMMIT_SHA=$CIRCLE_SHA1 uv run python deploy/create_deployment.py
+
+workflows:
+  version: 2
+  test_build_deploy:
+    jobs:
+      - test
+
+      - cdk_synth:
+          name: cdk_synth_development
+          dc-environment: development
+          requires:
+            - test
+          filters: { branches: { only: [main] } }
+          context: [deployment-development-lgsf]
+
+      - cdk_deploy:
+          name: cdk_deploy_development
+          dc-environment: development
+          requires:
+            - cdk_synth_development
+          filters: { branches: { only: [main] } }
+          context: [deployment-development-lgsf]
+
+      - code_deploy:
+          name: code_deploy_development
+          dc-environment: development
+          requires:
+            - cdk_deploy_development
+          filters: { branches: { only: [main] } }
+          context: [deployment-development-lgsf]
