@@ -1,0 +1,6 @@
+{
+  "PROJECT_NAME": "lgsf_web",
+  "APP_NAME": "lgsf_web",
+  "PROJECT_ROOT": "/var/www/lgsf_web",
+  "ENV_FILE_PATH": "/var/www/lgsf_web/code/.env"
+}
