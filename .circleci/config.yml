@@ -42,6 +42,39 @@ jobs:
           root: ~/repo/
           paths: [cdk.out/]
 
+  cdk_deploy:
+    docker:
+      - image: cimg/python:3.12-node
+    working_directory: ~/repo
+    parameters:
+      dc-environment:
+        type: enum
+        enum: [development, staging, production]
+    environment:
+      DC_ENVIRONMENT: <<parameters.dc-environment>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/repo/
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+            - v1-node-{{ checksum "package.json" }}
+      - run:
+          name: Install UV
+          command: ./deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install Python dependencies
+          command: uv sync --group cdk
+      - run:
+          name: Install Node.js dependencies
+          command: npm ci
+      - run:
+          name: CDK deploy
+          command: uv run npx cdk deploy --require-approval never --all
+
 workflows:
   version: 2
   test_build_deploy:
@@ -49,5 +82,13 @@ workflows:
       - cdk_synth:
           name: cdk_synth_development
           dc-environment: development
+          filters: { branches: { only: [deploy20261012] } }
+          context: [deployment-development-lgsf]
+
+      - cdk_deploy:
+          name: cdk_deploy_development
+          dc-environment: development
+          requires:
+            - cdk_synth_development
           filters: { branches: { only: [deploy20261012] } }
           context: [deployment-development-lgsf]
