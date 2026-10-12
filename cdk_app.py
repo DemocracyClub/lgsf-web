@@ -2,7 +2,7 @@ import os
 
 from aws_cdk import App, Environment, Tags
 
-from cdk_stacks.stacks.code_deploy import LGSFCodeDeployment
+from cdk_stacks.stacks.code_deploy import CodeDeployment
 
 valid_environments = (
     "development",
@@ -26,7 +26,7 @@ assert dc_environment in valid_environments, (
 )
 
 
-LGSFCodeDeployment(app, "LGSFCodeDeployment", env=env)
+CodeDeployment(app, "LGSFCodeDeployment", env=env)
 
 
 Tags.of(app).add("dc-product", "lgsf")
