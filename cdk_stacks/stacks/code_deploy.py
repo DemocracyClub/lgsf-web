@@ -258,9 +258,9 @@ class CodeDeployment(Stack):
             ),
         }
 
-        roles["codedeploy-ec2-instance-profile"].attach_inline_policy(
-            self.policies["codedeploy-ec2-permissions"]
-        )
+        # roles["codedeploy-ec2-instance-profile"].attach_inline_policy(
+        #    self.policies["codedeploy-ec2-permissions"]
+        # )
         roles["codedeploy-service-role"].attach_inline_policy(
             self.policies["codedeploy-launch-template-permissions"]
         )
