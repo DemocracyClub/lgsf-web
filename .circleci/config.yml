@@ -75,6 +75,40 @@ jobs:
           name: CDK deploy
           command: CDK_DEFAULT_ACCOUNT=518801061777 uv run npx cdk deploy --require-approval never --all
 
+  code_deploy:
+    docker:
+      - image: cimg/python:3.12-node
+    working_directory: ~/repo
+    parameters:
+      dc-environment:
+        type: enum
+        enum: [development, staging, production]
+    environment:
+      DC_ENVIRONMENT: <<parameters.dc-environment>>
+    steps:
+      - checkout
+      - attach_workspace:
+          at: ~/repo/
+      - setup_remote_docker:
+          docker_layer_caching: true
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+      - run:
+          name: Install UV
+          command: ./deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install Python dependencies
+          command: uv sync --group cdk
+      - run:
+          name: "Code Deploy: Create deployment group"
+          command: |
+            uv run python deploy/create_deployment_group.py
+      - run:
+          name: "Code Deploy: Create deployment"
+          command: |
+            COMMIT_SHA=$CIRCLE_SHA1 uv run python deploy/create_deployment.py
+
 workflows:
   version: 2
   test_build_deploy:
@@ -90,5 +124,13 @@ workflows:
           dc-environment: development
           requires:
             - cdk_synth_development
+          filters: { branches: { only: [deploy20261012] } }
+          context: [deployment-development-lgsf]
+
+      - code_deploy:
+          name: code_deploy_development
+          dc-environment: development
+          requires:
+            - cdk_deploy_development
           filters: { branches: { only: [deploy20261012] } }
           context: [deployment-development-lgsf]
