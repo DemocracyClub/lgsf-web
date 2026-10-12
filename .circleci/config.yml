@@ -1,0 +1,24 @@
+version: 2.1
+
+jobs:
+  test_circle_is_working:
+    docker:
+      - image: cimg/python:3.12
+    working_directory: ~/repo
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+      - run:
+          name: Install UV
+          command: .deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install dependencies
+          command: uv sync
+
+workflows:
+  version: 2
+  test_build_deploy:
+    jobs:
+      - test_circle_is_working
