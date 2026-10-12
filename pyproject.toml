@@ -11,7 +11,10 @@ dependencies = [
 ]
 
 [dependency-groups]
-cdk = []
+cdk = [
+    "aws-cdk-lib==2.253.0",
+    "constructs==10.5.0",
+]
 production = [
     "gunicorn==26.2.0",
     "sentry-sdk==2.71.0",

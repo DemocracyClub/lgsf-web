@@ -17,6 +17,9 @@ coverage.*
 # dotenv
 .env
 
+# node
+node_modules/
+
 # cdk gubbins
 cdk.out/**
 cdk.context.json
