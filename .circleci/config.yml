@@ -32,7 +32,7 @@ jobs:
           command: npm ci
       - run:
           name: CDK synth
-          command: uv run npx cdk synth
+          command: CDK_DEFAULT_ACCOUNT=518801061777 uv run npx cdk synth
       - save_cache:
           when: on_success
           paths:
