@@ -32,7 +32,7 @@ jobs:
           command: npm ci
       - run:
           name: CDK synth
-          command: CDK_DEFAULT_ACCOUNT=518801061777 uv run npx cdk synth
+          command: uv run npx cdk synth
       - save_cache:
           when: on_success
           paths:
@@ -73,7 +73,7 @@ jobs:
           command: npm ci
       - run:
           name: CDK deploy
-          command: CDK_DEFAULT_ACCOUNT=518801061777 uv run npx cdk deploy --require-approval never --all
+          command: uv run npx cdk deploy --require-approval never --all
 
   code_deploy:
     docker:
