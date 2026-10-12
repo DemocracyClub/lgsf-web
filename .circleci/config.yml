@@ -50,3 +50,4 @@ workflows:
           name: cdk_synth_development
           dc-environment: development
           filters: { branches: { only: [deploy20261012] } }
+          context: [deployment-development-lgsf]
