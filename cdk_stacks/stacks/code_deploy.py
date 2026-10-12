@@ -59,7 +59,8 @@ class CodeDeployment(Stack):
 
         self.code_deploy = self.create_code_deploy()
 
-        self.cloudfront = self.create_cloudfront(self.alb)
+        # TODO: skip CloudFront for now
+        # self.cloudfront = self.create_cloudfront(self.alb)
 
     def create_code_deploy(self):
         codedeploy.ServerApplication(
