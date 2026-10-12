@@ -73,7 +73,7 @@ jobs:
           command: npm ci
       - run:
           name: CDK deploy
-          command: uv run npx cdk deploy --require-approval never --all
+          command: CDK_DEFAULT_ACCOUNT=518801061777 uv run npx cdk deploy --require-approval never --all
 
 workflows:
   version: 2
