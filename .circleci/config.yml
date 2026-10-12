@@ -12,7 +12,7 @@ jobs:
             - v1-dependencies-{{ checksum "uv.lock" }}
       - run:
           name: Install UV
-          command: .deploy/hooks/afterinstall/install_uv.sh
+          command: ./deploy/hooks/afterinstall/install_uv.sh
       - run:
           name: Install dependencies
           command: uv sync
