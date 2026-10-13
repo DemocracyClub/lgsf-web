@@ -278,7 +278,7 @@ class CodeDeployment(Stack):
         # Hard code the ARN due to a bug with CDK that means we can't run synth
         # with the placeholder values the SSM interface produces :(
         cert_arns = {
-            "development": "TODO",
+            "development": "arn:aws:acm:us-east-1:518801061777:certificate/84cb1539-e2cb-4fdf-8708-5d0b45713e19",
             "staging": "TODO",
             "production": "TODO",
         }
@@ -350,7 +350,7 @@ class CodeDeployment(Stack):
                     ),
                 ),
             },
-            # certificate=cert,
+            certificate=cert,
             domain_names=[fqdn],
             price_class=cloudfront.PriceClass.PRICE_CLASS_100,
         )
