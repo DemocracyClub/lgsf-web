@@ -88,9 +88,10 @@ hooks:
     - location: deploy/hooks/afterinstall/migrate.sh
       timeout: 300
       runas: lgsf_web
-    - location: deploy/hooks/afterinstall/collectstatic.sh
-      timeout: 300
-      runas: lgsf_web
+# TODO FIXME
+#    - location: deploy/hooks/afterinstall/collectstatic.sh
+#      timeout: 300
+#      runas: lgsf_web
 # During the ApplicationStart deployment lifecycle event, run the commands
 #   in the script specified in "location".
   ApplicationStart:
