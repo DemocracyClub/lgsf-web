@@ -8,6 +8,11 @@ session = boto3.Session()
 
 # hardcoded to name in cdk/code_deploy.py
 TARGET_GROUP_NAME = "lgsf-alb-tg"
+AVAILABILITY_ZONES = [
+    "eu-west-2a",
+    "eu-west-2b",
+    "eu-west-2c",
+]
 
 
 def check_deployment_group():
@@ -63,10 +68,14 @@ def check_deployment_group():
 
 def get_subnet_ids():
     """
-    Returns a list of all subnet ids in the AWS account
+    Returns subnet ids restricted to AVAILABILITY_ZONES, to match the ASG's AvailabilityZones
     """
     client = session.client("ec2", region_name=os.environ.get("AWS_REGION"))
-    response = client.describe_subnets()
+    response = client.describe_subnets(
+        Filters=[
+            {"Name": "availability-zone", "Values": AVAILABILITY_ZONES},
+        ]
+    )
     return [subnet["SubnetId"] for subnet in response["Subnets"]]
 
 
@@ -110,11 +119,7 @@ def create_default_asg():
 
     return client.create_auto_scaling_group(
         AutoScalingGroupName="default",
-        AvailabilityZones=[
-            "eu-west-2a",
-            "eu-west-2b",
-            "eu-west-2c",
-        ],
+        AvailabilityZones=AVAILABILITY_ZONES,
         LaunchTemplate={
             "LaunchTemplateName": "lgsf-launch-template",
             "Version": "$Latest",
