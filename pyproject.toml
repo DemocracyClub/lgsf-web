@@ -18,7 +18,7 @@ cdk = [
     "constructs==10.5.0",
 ]
 production = [
-    "gunicorn==26.2.0",
+    "gunicorn[gevent]==26.2.0",
     "sentry-sdk==2.71.0",
     "gevent==26.9.0",
 ]
