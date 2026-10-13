@@ -34,7 +34,7 @@ def create_deployment():
         revision={
             "revisionType": "GitHub",
             "gitHubLocation": {
-                "repository": "DemocracyClub/EveryElection",
+                "repository": "DemocracyClub/lgsf-web",
                 "commitId": os.environ.get("COMMIT_SHA"),
             },
         },
