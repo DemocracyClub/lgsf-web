@@ -59,8 +59,7 @@ class CodeDeployment(Stack):
 
         self.code_deploy = self.create_code_deploy()
 
-        # TODO: skip CloudFront for now
-        # self.cloudfront = self.create_cloudfront(self.alb)
+        self.cloudfront = self.create_cloudfront(self.alb)
 
     def create_code_deploy(self):
         codedeploy.ServerApplication(
@@ -351,7 +350,7 @@ class CodeDeployment(Stack):
                     ),
                 ),
             },
-            certificate=cert,
+            # certificate=cert,
             domain_names=[fqdn],
             price_class=cloudfront.PriceClass.PRICE_CLASS_100,
         )
