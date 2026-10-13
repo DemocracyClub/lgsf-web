@@ -280,6 +280,7 @@ name = "lgsf-web"
 version = "0.0.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "boto3" },
     { name = "django" },
     { name = "psycopg", extra = ["binary"] },
     { name = "python-dotenv" },
@@ -304,6 +305,7 @@ production = [
 
 [package.metadata]
 requires-dist = [
+    { name = "boto3", specifier = "==1.43.112" },
     { name = "django", specifier = "==5.2.18" },
     { name = "psycopg", extras = ["binary"], specifier = "==3.3.6" },
     { name = "python-dotenv", specifier = "==1.2.2" },
