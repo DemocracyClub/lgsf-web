@@ -13,6 +13,7 @@ dependencies = [
 [dependency-groups]
 cdk = [
     "aws-cdk-lib==2.253.0",
+    "boto3==1.43.112",
     "constructs==10.5.0",
 ]
 production = [
