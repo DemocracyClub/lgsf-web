@@ -20,6 +20,7 @@ path.append(str(SITE_ROOT))
 
 dotenv.load_dotenv(SITE_ROOT / ".env")
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "lgsf_web.settings.deploy")
+if not os.environ.get("DJANGO_SETTINGS_MODULE"):
+    raise ImproperlyConfigured("You must explicitly set DJANGO_SETTINGS_MODULE")
 
 application = get_wsgi_application()
