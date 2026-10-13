@@ -64,7 +64,7 @@ class CodeDeployment(Stack):
 
     def create_code_deploy(self):
         codedeploy.ServerApplication(
-            self, "CodeDeployApplicationID", application_name="LSGFCodeDeploy"
+            self, "CodeDeployApplicationID", application_name="LGSFCodeDeploy"
         )
 
     def create_launch_template(
@@ -188,7 +188,7 @@ class CodeDeployment(Stack):
             internet_facing=True,
             security_group=security_group,
             ip_address_type=elbv2.IpAddressType.IPV4,
-            load_balancer_name="lsgf-alb",
+            load_balancer_name="lgsf-alb",
         )
 
         # Listen on HTTP
@@ -222,9 +222,9 @@ class CodeDeployment(Stack):
                 "CodeDeployAndRelatedServices",
                 CODE_DEPLOY_POLICY,
             ),
-            "lsgf-deployer": create_policy(
-                "lsgf-deployer-id",
-                "LSGFDeployer",
+            "lgsf-deployer": create_policy(
+                "lgsf-deployer-id",
+                "LGSFDeployer",
                 DEPLOYER_POLICY,
             ),
         }
@@ -357,7 +357,7 @@ class CodeDeployment(Stack):
         )
 
         hosted_zone = route_53.HostedZone.from_lookup(
-            self, "LSGFDomain", domain_name=fqdn, private_zone=False
+            self, "LGSFDomain", domain_name=fqdn, private_zone=False
         )
         route_53.ARecord(
             self,

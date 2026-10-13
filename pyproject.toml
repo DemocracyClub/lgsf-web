@@ -36,7 +36,7 @@ environments = [
 
 [tool.ruff]
 line-length = 80
-extend-exclude = ["lsgf_web/settings/local.py"]
+extend-exclude = ["lgsf_web/settings/local.py"]
 
 [tool.ruff.lint]
 ignore = ["E501"]
