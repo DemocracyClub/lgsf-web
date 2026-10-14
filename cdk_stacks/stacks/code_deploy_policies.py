@@ -27,8 +27,6 @@ DEPLOYER_POLICY = {
                 "s3:PutObjectTagging",
             ],
             "Resource": [
-                # TODO: do I need something like
-                # "arn:aws:cloudformation:eu-west-2:*:stack/EEApp*/*",
                 "arn:aws:events:eu-west-2:*:rule/*",
             ],
         }
