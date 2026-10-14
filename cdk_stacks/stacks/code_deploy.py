@@ -309,6 +309,7 @@ class CodeDeployment(Stack):
             default_behavior=cloudfront.BehaviorOptions(
                 origin=app_origin,
                 allowed_methods=cloudfront.AllowedMethods.ALLOW_ALL,
+                viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                 cache_policy=cloudfront.CachePolicy(
                     self,
                     "short_cache_not_authenticated",
@@ -336,6 +337,7 @@ class CodeDeployment(Stack):
                         http_port=80,
                         protocol_policy=cloudfront.OriginProtocolPolicy.HTTP_ONLY,
                     ),
+                    viewer_protocol_policy=cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
                     cache_policy=cloudfront.CachePolicy(
                         self,
                         "long_cache_static",
