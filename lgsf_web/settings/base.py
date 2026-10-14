@@ -68,6 +68,7 @@ INSTALLED_APPS = [
 PROJECT_APPS = [
     "core",
     "embeddings",
+    "councillors",
 ]
 
 INSTALLED_APPS += PROJECT_APPS
