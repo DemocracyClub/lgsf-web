@@ -87,6 +87,7 @@ class CodeDeployment(Stack):
             launch_template_name="lgsf-launch-template",
             role=role,
             security_group=security_group,
+            associate_public_ip_address=False,
             block_devices=[
                 ec2.BlockDevice(
                     device_name="/dev/sda1",
