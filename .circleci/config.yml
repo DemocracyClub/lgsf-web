@@ -144,7 +144,7 @@ workflows:
           dc-environment: development
           requires:
             - test
-          filters: { branches: { only: [deploy20261012] } }
+          filters: { branches: { only: [main] } }
           context: [deployment-development-lgsf]
 
       - cdk_deploy:
@@ -152,7 +152,7 @@ workflows:
           dc-environment: development
           requires:
             - cdk_synth_development
-          filters: { branches: { only: [deploy20261012] } }
+          filters: { branches: { only: [main] } }
           context: [deployment-development-lgsf]
 
       - code_deploy:
@@ -160,5 +160,5 @@ workflows:
           dc-environment: development
           requires:
             - cdk_deploy_development
-          filters: { branches: { only: [deploy20261012] } }
+          filters: { branches: { only: [main] } }
           context: [deployment-development-lgsf]
