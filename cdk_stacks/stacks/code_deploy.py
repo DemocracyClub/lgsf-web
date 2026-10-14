@@ -258,9 +258,14 @@ class CodeDeployment(Stack):
             ),
         }
 
-        # roles["codedeploy-ec2-instance-profile"].attach_inline_policy(
-        #    self.policies["codedeploy-ec2-permissions"]
-        # )
+        """
+        TODO: if we need to give the EC2 instance to do stuff like
+        write to a S3 bucket, write a policy + attach it here:
+
+        roles["codedeploy-ec2-instance-profile"].attach_inline_policy(
+            self.policies["codedeploy-ec2-permissions"]
+        )
+        """
         roles["codedeploy-service-role"].attach_inline_policy(
             self.policies["codedeploy-launch-template-permissions"]
         )
