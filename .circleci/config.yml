@@ -1,6 +1,27 @@
 version: 2.1
 
 jobs:
+  test:
+    docker:
+      - image: cimg/python:3.12-node
+    working_directory: ~/repo
+    steps:
+      - restore_cache:
+          keys:
+            - v1-dependencies-{{ checksum "uv.lock" }}
+      - run:
+          name: Install UV
+          command: ./deploy/hooks/afterinstall/install_uv.sh
+      - run:
+          name: Install Python dependencies
+          command: uv sync
+      - run:
+          name: Run code checks
+          command: |
+            uv run ruff format . --check
+            uv run ruff check .
+      # TODO: set up pytest + run it once we have tests
+
   cdk_synth:
     docker:
       - image: cimg/python:3.12-node
@@ -113,9 +134,13 @@ workflows:
   version: 2
   test_build_deploy:
     jobs:
+      - test
+
       - cdk_synth:
           name: cdk_synth_development
           dc-environment: development
+          requires:
+            - test
           filters: { branches: { only: [deploy20261012] } }
           context: [deployment-development-lgsf]
 
