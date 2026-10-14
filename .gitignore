@@ -9,6 +9,7 @@ __pycache__/
 build/
 dist/
 *.egg-info/
+lgsf_web/static/
 
 # test coverage
 .coverage

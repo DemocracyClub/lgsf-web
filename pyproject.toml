@@ -10,6 +10,7 @@ dependencies = [
     "python-dotenv==1.2.2",
     "psycopg[binary]==3.3.6",
     "requests==2.34.2",
+    "dc-django-utils",
 ]
 
 [dependency-groups]
@@ -28,6 +29,9 @@ dev = [
     "ruff==0.16.10",
     "djhtml==3.0.11",
 ]
+
+[tool.uv.sources]
+dc-django-utils = { git = "https://github.com/DemocracyClub/dc_django_utils.git", tag = "8.0.5" }
 
 [tool.uv]
 package = false
