@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Search Decisions</title>
+
+    <!-- TODO: not this -->
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+    <main class="container">
+        <h1>Search Decisions</h1>
+
+        <form method="get">
+            {{ form.q }}
+            <button type="submit">Search</button>
+        </form>
+
+        {% if results %}
+            <ul>
+                {% for decision in results %}
+                    <li>{{ decision.raw_title }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </main>
+</body>
+</html>
