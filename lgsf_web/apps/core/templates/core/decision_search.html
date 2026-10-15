@@ -17,11 +17,10 @@
         </form>
 
         {% if results %}
-            <ul>
-                {% for decision in results %}
-                    <li>{{ decision.raw_title }}</li>
-                {% endfor %}
-            </ul>
+            <h2>{{ results.count }} Results</h2>
+            {% for result in results %}
+                {% include "core/snippets/inline_decision.html" with decision=result %}
+            {% endfor %}
         {% endif %}
     </main>
 </body>
