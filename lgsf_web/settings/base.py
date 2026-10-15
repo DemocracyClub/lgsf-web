@@ -212,3 +212,7 @@ if sentry_dsn := os.environ.get("SENTRY_DSN"):
         ],
         environment=DC_ENVIRONMENT,
     )
+
+# Github Settings
+GITHUB_API_TOKEN = os.environ.get("GITHUB_API_TOKEN")
+GITHUB_ORGANISATION = "LGSF-Data"
