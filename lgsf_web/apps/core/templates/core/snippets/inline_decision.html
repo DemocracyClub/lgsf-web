@@ -1,5 +1,5 @@
 <article>
-    <h3>{{ decision.raw_title }}</h3>
+    <h3><a href="{% url 'core:decision-detail' decision.pk %}">{{ decision.raw_title }}</a></h3>
     <dl>
       <dt>council</dt>
       <dd>{{ decision.council }}</dd>
