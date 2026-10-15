@@ -24,3 +24,6 @@ node_modules/
 # cdk gubbins
 cdk.out/**
 cdk.context.json
+
+# data we've synced from S3
+data/
