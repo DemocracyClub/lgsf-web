@@ -14,9 +14,12 @@ def decision_search(request):
     results = []
 
     if form.is_valid() and (query := form.cleaned_data["q"]):
-        results = (
-            Decision.objects.all().prefetch_related("documents").search(query)
-        )
+        queryset = Decision.objects.all().prefetch_related("documents")
+
+        if council := form.cleaned_data["council"]:
+            queryset = queryset.filter(council=council)
+
+        results = queryset.search(query)
 
     context = {
         "form": form,
