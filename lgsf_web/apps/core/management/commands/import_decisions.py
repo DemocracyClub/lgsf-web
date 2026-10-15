@@ -192,10 +192,12 @@ class Command(BaseCommand):
                 text=get_document_text(doc, council),
             )
             for doc in data["documents"]
+            ###
             # workaround for bug in scrapers
             # TODO: scrapers should not make a Document object
             # if error from upstream API
             if "storage_key" in doc
+            ###
             # ignore legacy document format for now
             # TODO: deal with this somehow
             and "content_type" in doc

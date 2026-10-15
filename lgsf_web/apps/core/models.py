@@ -1,7 +1,13 @@
 from django.db import models
+from modelsearch import index
+from modelsearch.queryset import SearchableQuerySetMixin
 
 
-class Decision(models.Model):
+class DecisionQuerySet(SearchableQuerySetMixin, models.QuerySet):
+    pass
+
+
+class Decision(index.Indexed, models.Model):
     # Three-letter LGSF council code, e.g. "AGY" (matches data/<CODE>/Decisions/)
     council = models.CharField(max_length=3)
     raw_identifier = models.CharField(max_length=255)
@@ -34,6 +40,31 @@ class Decision(models.Model):
                 name="unique_council_decision",
             ),
         )
+
+    objects = DecisionQuerySet.as_manager()
+
+    search_fields = (
+        index.SearchField("raw_title", boost=3),
+        index.SearchField("text", boost=3),
+        # index.SearchField('raw_decision_maker'),
+        ###
+        # filters
+        index.FilterField("council"),
+        index.FilterField("status"),
+        index.FilterField("is_key_decision"),
+        index.FilterField("is_officer_decision"),
+        index.FilterField("is_subject_to_call_in"),
+        index.FilterField("publication_date"),
+        ###
+        # related fields
+        index.RelatedFields(
+            "documents",
+            [
+                index.SearchField("title", boost=2),
+                index.SearchField("text"),
+            ],
+        ),
+    )
 
     def __str__(self):
         return f"{self.council}/{self.raw_identifier}: {self.raw_title}"
