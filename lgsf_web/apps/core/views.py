@@ -22,6 +22,12 @@ def decision_search(request):
         if status := form.cleaned_data["status"]:
             queryset = queryset.filter(status=status)
 
+        if date_from := form.cleaned_data["publication_date_from"]:
+            queryset = queryset.filter(publication_date__gte=date_from)
+
+        if date_to := form.cleaned_data["publication_date_to"]:
+            queryset = queryset.filter(publication_date__lte=date_to)
+
         results = queryset.search(query)
 
     context = {

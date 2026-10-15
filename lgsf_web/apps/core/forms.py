@@ -37,3 +37,15 @@ class DecisionSearchForm(forms.Form):
         required=False,
         choices=status_choices,
     )
+    publication_date_from = forms.DateField(
+        label="From",
+        required=False,
+        input_formats=["%d/%m/%Y", "%Y-%m-%d"],
+        widget=forms.DateInput(attrs={"type": "date"}, format="%d/%m/%Y"),
+    )
+    publication_date_to = forms.DateField(
+        label="To",
+        required=False,
+        input_formats=["%d/%m/%Y", "%Y-%m-%d"],
+        widget=forms.DateInput(attrs={"type": "date"}, format="%d/%m/%Y"),
+    )
