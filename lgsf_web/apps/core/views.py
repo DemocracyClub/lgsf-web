@@ -13,7 +13,7 @@ def decision_search(request):
     form = DecisionSearchForm(request.GET or None)
     results = []
 
-    if form.is_valid() and (query := form.cleaned_data["q"]):
+    if form.is_valid():
         queryset = Decision.objects.all().prefetch_related("documents")
 
         if council := form.cleaned_data["council"]:
@@ -28,7 +28,19 @@ def decision_search(request):
         if date_to := form.cleaned_data["publication_date_to"]:
             queryset = queryset.filter(publication_date__lte=date_to)
 
-        results = queryset.search(query)
+        if form.cleaned_data["is_key_decision"]:
+            queryset = queryset.filter(is_key_decision=True)
+
+        if form.cleaned_data["is_officer_decision"]:
+            queryset = queryset.filter(is_officer_decision=True)
+
+        if form.cleaned_data["is_subject_to_call_in"]:
+            queryset = queryset.filter(is_subject_to_call_in=True)
+
+        if query := form.cleaned_data["q"]:
+            results = queryset.search(query)
+        else:
+            results = queryset
 
     context = {
         "form": form,

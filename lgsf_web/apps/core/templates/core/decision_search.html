@@ -21,6 +21,23 @@
             {{ form.publication_date_from }}
             {{ form.publication_date_to.label_tag }}
             {{ form.publication_date_to }}
+
+            <fieldset>
+              <label for="{{ form.is_key_decision.id_for_label }}">
+                {{ form.is_key_decision }}
+                {{ form.is_key_decision.label }}
+              </label>
+
+              <label for="{{ form.is_officer_decision.id_for_label }}">
+                {{ form.is_officer_decision }}
+                {{ form.is_officer_decision.label }}
+              </label>
+
+              <label for="{{ form.is_subject_to_call_in.id_for_label }}">
+                {{ form.is_subject_to_call_in }}
+                {{ form.is_subject_to_call_in.label }}
+              </label>
+            </fieldset>
             <button type="submit">Search</button>
         </form>
 

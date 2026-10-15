@@ -49,3 +49,15 @@ class DecisionSearchForm(forms.Form):
         input_formats=["%d/%m/%Y", "%Y-%m-%d"],
         widget=forms.DateInput(attrs={"type": "date"}, format="%d/%m/%Y"),
     )
+    is_key_decision = forms.BooleanField(
+        label="Key decisions only",
+        required=False,
+    )
+    is_officer_decision = forms.BooleanField(
+        label="Officer decisions only",
+        required=False,
+    )
+    is_subject_to_call_in = forms.BooleanField(
+        label="Subject to call-in only",
+        required=False,
+    )
