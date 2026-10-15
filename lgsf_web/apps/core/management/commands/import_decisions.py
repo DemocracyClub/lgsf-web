@@ -10,6 +10,7 @@ Usage:
 
 import json
 import logging
+import re
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -17,6 +18,9 @@ from core.models import Decision, Document
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
+from pypdf import PdfReader
+
+_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
 # settings.BASE_DIR is the lgsf_web package dir; data/ lives alongside manage.py, one level up
 DATA_DIR = Path(settings.BASE_DIR).parent / "data"
@@ -39,6 +43,25 @@ def validate_date_arg(value):
             f"Invalid date {value!r}, expected YYYY-MM-DD"
         ) from None
     return value
+
+
+def clean_text(text):
+    # drop NUL/control bytes Postgres rejects, and lone surrogates pypdf sometimes emits
+    text = text.encode("utf-8", "surrogatepass").decode("utf-8", "ignore")
+    return _CONTROL_CHARS_RE.sub("", text)
+
+
+def get_document_text(doc, council):
+    if doc["content_type"] != "application/pdf":
+        # TODO: handle other document types
+        return ""
+
+    path = DATA_DIR / council / "Decisions" / "documents" / doc["storage_key"]
+    logger.info(path)
+
+    reader = PdfReader(path)
+    text = "\n".join(page.extract_text() or "" for page in reader.pages)
+    return clean_text(text)
 
 
 VERBOSITY_TO_LOG_LEVEL = {
@@ -166,6 +189,7 @@ class Command(BaseCommand):
                 last_modified=doc["last_modified"],
                 storage_backend=doc["storage_backend"],
                 storage_key=doc["storage_key"],
+                text=get_document_text(doc, council),
             )
             for doc in data["documents"]
             # workaround for bug in scrapers

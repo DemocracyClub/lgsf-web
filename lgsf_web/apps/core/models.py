@@ -58,5 +58,7 @@ class Document(models.Model):
     storage_backend = models.CharField(max_length=255, blank=True)
     storage_key = models.CharField(max_length=1024, blank=True)
 
+    text = models.TextField(blank=True)
+
     def __str__(self):
         return self.title or self.storage_key
