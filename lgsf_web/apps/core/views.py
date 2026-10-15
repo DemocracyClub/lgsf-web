@@ -19,6 +19,9 @@ def decision_search(request):
         if council := form.cleaned_data["council"]:
             queryset = queryset.filter(council=council)
 
+        if status := form.cleaned_data["status"]:
+            queryset = queryset.filter(status=status)
+
         results = queryset.search(query)
 
     context = {
