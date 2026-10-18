@@ -1,3 +1,10 @@
-from django.shortcuts import render
+from councillors.models import ScrapedCouncillor
+from django.views.generic import DetailView, ListView
 
-# Create your views here.
+
+class ScrapedCouncillorListView(ListView):
+    model = ScrapedCouncillor
+
+
+class ScrapedCouncillorDetailView(DetailView):
+    model = ScrapedCouncillor

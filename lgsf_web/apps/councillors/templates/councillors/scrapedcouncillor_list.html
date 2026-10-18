@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Scraped councillors</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+  <h1>Scraped councillors</h1>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Council</th>
+          <th scope="col">Identifier</th>
+          <th scope="col">Name</th>
+          <th scope="col">Division</th>
+          <th scope="col">Party</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for councillor in object_list %}
+          <tr>
+            <th scope="row">{{ councillor.council_id }}</th>
+            <td>{{ councillor.raw_identifier }}</td>
+            <td><a href="{% url 'councillors:scraped_detail' councillor.pk %}">{{ councillor.raw_name }}</a></td>
+            <td>{{ councillor.raw_division }}</td>
+            <td>{{ councillor.raw_party }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">No scraped councillors.</td></tr>
+        {% endfor %}
+      </tbody>
+  </table>
+  </main>
+
+</body>
+</html>
