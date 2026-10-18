@@ -14,4 +14,14 @@ urlpatterns = [
         views.ScrapedCouncillorDetailView.as_view(),
         name="scraped_detail",
     ),
+    path(
+        "enriched/",
+        views.EnrichedCouncillorListView.as_view(),
+        name="enriched_list",
+    ),
+    path(
+        "enriched/<int:pk>/",
+        views.EnrichedCouncillorDetailView.as_view(),
+        name="enriched_detail",
+    ),
 ]

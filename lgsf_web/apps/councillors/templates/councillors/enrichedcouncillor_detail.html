@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ object.base_councillor.raw_name }} (enriched)</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+    <p><a href="{% url 'councillors:enriched_list' %}">&larr; All enriched councillors</a></p>
+    <h1>{{ object.base_councillor.raw_name }}</h1>
+    <dl>
+      <dt>Council</dt><dd>{{ object.base_councillor.council_id }}</dd>
+      <dt>EE division ID</dt><dd>{{ object.ee_division_id|default_if_none:"" }}</dd>
+      <dt>EE division name</dt><dd>{{ object.ee_division_name }}</dd>
+      <dt>EC party ID</dt><dd>{{ object.ynr_party_id }}</dd>
+      <dt>YNR ID</dt><dd>{{ object.ynr_id|default_if_none:"" }}</dd>
+      <dt>YNR name</dt><dd>{{ object.ynr_name }}</dd>
+    </dl>
+    <p><a href="{% url 'councillors:scraped_detail' object.base_councillor.pk %}">View scraped record</a></p>
+  </main>
+</body>
+</html>

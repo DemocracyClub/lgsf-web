@@ -18,6 +18,9 @@
       <dt>Photo URL</dt><dd>{{ object.photo_url }}</dd>
       <dt>URL</dt><dd><a href="{{ object.url }}">{{ object.url }}</a></dd>
     </dl>
+    {% if object.enriched %}
+      <p><a href="{% url 'councillors:enriched_detail' object.enriched.pk %}">View enriched record</a></p>
+    {% endif %}
   </main>
 </body>
 </html>

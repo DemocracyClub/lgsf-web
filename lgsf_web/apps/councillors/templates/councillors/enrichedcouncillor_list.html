@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Enriched councillors</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+
+</head>
+<body>
+  <main class="container">
+    <h1>Enriched councillors</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Council</th>
+          <th>Scraped name</th>
+          <th>YNR name</th>
+          <th>Division</th>
+          <th>Party ID</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for councillor in object_list %}
+          <tr>
+            <td>{{ councillor.base_councillor.council_id }}</td>
+            <td><a href="{% url 'councillors:enriched_detail' councillor.pk %}">{{ councillor.base_councillor.raw_name }}</a></td>
+            <td>{{ councillor.ynr_name }}</td>
+            <td>{{ councillor.ee_division_name }}</td>
+            <td>{{ councillor.ynr_party_id }}</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="6">No enriched councillors.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>
