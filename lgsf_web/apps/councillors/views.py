@@ -19,3 +19,18 @@ class EnrichedCouncillorListView(ListView):
 class EnrichedCouncillorDetailView(DetailView):
     model = EnrichedCouncillor
     queryset = EnrichedCouncillor.objects.select_related("base_councillor")
+
+
+class CompareListView(ListView):
+    model = EnrichedCouncillor
+    queryset = EnrichedCouncillor.objects.select_related("base_councillor")
+    template_name = "councillors/compare_list.html"
+
+
+class CompareDetailView(DetailView):
+    """Keyed on the scraped councillor pk; 404s if there is no enriched record."""
+
+    queryset = ScrapedCouncillor.objects.filter(
+        enriched__isnull=False
+    ).select_related("enriched")
+    template_name = "councillors/compare_detail.html"

@@ -17,7 +17,8 @@
       <dt>YNR ID</dt><dd>{{ object.ynr_id|default_if_none:"" }}</dd>
       <dt>YNR name</dt><dd>{{ object.ynr_name }}</dd>
     </dl>
-    <p><a href="{% url 'councillors:scraped_detail' object.base_councillor.pk %}">View scraped record</a></p>
+    <p><a href="{% url 'councillors:scraped_detail' object.base_councillor.pk %}">View scraped record</a>
+    | <a href="{% url 'councillors:compare_detail' object.base_councillor.pk %}">Compare</a></p>
   </main>
 </body>
 </html>

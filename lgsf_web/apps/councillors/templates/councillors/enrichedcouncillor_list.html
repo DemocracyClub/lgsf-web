@@ -17,6 +17,7 @@
           <th>YNR name</th>
           <th>Division</th>
           <th>Party ID</th>
+          <th>Compare</th>
         </tr>
       </thead>
       <tbody>
@@ -27,6 +28,7 @@
             <td>{{ councillor.ynr_name }}</td>
             <td>{{ councillor.ee_division_name }}</td>
             <td>{{ councillor.ynr_party_id }}</td>
+            <td><a href="{% url 'councillors:compare_detail' councillor.base_councillor.pk %}">Compare</a></td>
           </tr>
         {% empty %}
           <tr><td colspan="6">No enriched councillors.</td></tr>

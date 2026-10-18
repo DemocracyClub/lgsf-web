@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Compare councillors</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+    <h1>Compare councillors</h1>
+    <table>
+      <thead>
+        <tr>
+          <th>Council</th>
+          <th>Field Comparisons</th>
+          <th>Links</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for enriched in object_list %}
+          {% with scraped=enriched.base_councillor %}
+            <tr>
+              <td>{{ scraped.council_id }}</td>
+              <td>
+                {% include "councillors/includes/field_comparison_table.html" with scraped=scraped enriched=enriched only %}
+              </td>
+              <td>
+                <ul>
+                  <li>
+                    <a href="{% url 'councillors:scraped_detail' scraped.id %}">View Scraped</a>
+                  </li>
+                  <li>
+                    <a href="{% url 'councillors:enriched_detail' enriched.id %}">View Enriched</a>
+                  </li>
+                  <li>
+                    <a href="{% url 'councillors:compare_detail' scraped.id %}">Compare</a>
+                  </li>
+                </ul>
+              </td>
+            </tr>
+          {% endwith %}
+        {% empty %}
+          <tr><td colspan="8">No enriched councillors to compare.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

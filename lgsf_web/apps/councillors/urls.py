@@ -24,4 +24,14 @@ urlpatterns = [
         views.EnrichedCouncillorDetailView.as_view(),
         name="enriched_detail",
     ),
+    path(
+        "compare/",
+        views.CompareListView.as_view(),
+        name="compare_list",
+    ),
+    path(
+        "compare/<int:pk>/",
+        views.CompareDetailView.as_view(),
+        name="compare_detail",
+    ),
 ]

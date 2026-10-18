@@ -16,6 +16,7 @@
           <th scope="col">Name</th>
           <th scope="col">Division</th>
           <th scope="col">Party</th>
+          <th scope="col">Compare</th>
         </tr>
       </thead>
       <tbody>
@@ -26,6 +27,7 @@
             <td><a href="{% url 'councillors:scraped_detail' councillor.pk %}">{{ councillor.raw_name }}</a></td>
             <td>{{ councillor.raw_division }}</td>
             <td>{{ councillor.raw_party }}</td>
+            <td>{% if councillor.enriched %}<a href="{% url 'councillors:compare_detail' councillor.pk %}">Compare</a>{% endif %}</td>
           </tr>
         {% empty %}
           <tr><td colspan="6">No scraped councillors.</td></tr>

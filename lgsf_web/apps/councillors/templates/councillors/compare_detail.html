@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Compare {{ object.raw_name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+    <p><a href="{% url 'councillors:compare_list' %}">&larr; All comparisons</a></p>
+    <h1>{{ object.raw_name }}</h1>
+    <p>Council: {{ object.council_id }}</p>
+    {% include "councillors/includes/field_comparison_table.html" with scraped=object enriched=object.enriched only %}
+    <p>
+      <a href="{% url 'councillors:scraped_detail' object.pk %}">Scraped detail</a>
+      | <a href="{% url 'councillors:enriched_detail' object.enriched.pk %}">Enriched detail</a>
+    </p>
+  </main>
+</body>
+</html>

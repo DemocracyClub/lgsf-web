@@ -19,7 +19,8 @@
       <dt>URL</dt><dd><a href="{{ object.url }}">{{ object.url }}</a></dd>
     </dl>
     {% if object.enriched %}
-      <p><a href="{% url 'councillors:enriched_detail' object.enriched.pk %}">View enriched record</a></p>
+      <p><a href="{% url 'councillors:enriched_detail' object.enriched.pk %}">View enriched record</a>
+      | <a href="{% url 'councillors:compare_detail' object.pk %}">Compare</a></p>
     {% endif %}
   </main>
 </body>
