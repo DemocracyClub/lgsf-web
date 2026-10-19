@@ -209,22 +209,33 @@ def write_status(store, document_key: str, status: DocumentStatus):
     )
 
 
+def list_keys(store, tasks: list[Task]) -> set[str]:
+    """
+    Every key in the documents directories of the tasks' councils:
+    documents and sidecars. On S3, that's one ListObjectsV2 for each
+    thousand keys.
+    """
+    keys = set()
+    for council in sorted({task.council for task in tasks}):
+        directory = DOCUMENTS_DIR.format(council=council)
+        keys.update(store.list_prefix(f"{directory}/"))
+    return keys
+
+
 def read_statuses(
-    store, tasks: list[Task], threads: int = 16
+    store, tasks: list[Task], existing: set[str] | None = None, threads=16
 ) -> dict[tuple[str, str], DocumentStatus | None]:
     """
     The status at every storage key of every task, by (council, storage
     key). A status for another content_hash is for a file the council
     has since replaced, and counts as None.
 
-    Each council's documents directory is listed first, so only the
-    status files that exist are read. On S3, that's one ListObjectsV2
-    for each thousand keys, rather than a request for each document.
+    Only the status files in `existing`, from list_keys(), are read,
+    rather than making a request for each document that hasn't been
+    done.
     """
-    existing = set()
-    for council in sorted({task.council for task in tasks}):
-        directory = DOCUMENTS_DIR.format(council=council)
-        existing.update(store.list_prefix(f"{directory}/"))
+    if existing is None:
+        existing = list_keys(store, tasks)
 
     wanted = []
     for task in tasks:

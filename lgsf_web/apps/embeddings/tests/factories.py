@@ -71,3 +71,33 @@ def make_task(council="TST", content_hash="sha256:aaa", keys=("1-s1.pdf",)):
         content_length=1000,
         documents=documents,
     )
+
+
+def create_document(council, identifier, date, storage_key, content_hash):
+    """
+    A Document in the database, linked from its own decision, which is
+    made if there isn't one with this identifier.
+    """
+    import datetime
+
+    from core.models import Decision, Document
+
+    decision, _ = Decision.objects.get_or_create(
+        council_id=council,
+        raw_identifier=identifier,
+        defaults={
+            "raw_title": f"Decision {identifier}",
+            "raw_decision_maker": "Cabinet",
+            "raw_date": datetime.date.fromisoformat(date),
+            "url": f"https://example.org/{council}/decisions/{identifier}",
+        },
+    )
+    return Document.objects.create(
+        decision=decision,
+        title=f"Document {storage_key}",
+        url=f"https://example.org/{council}/documents/{storage_key}",
+        content_type="application/pdf",
+        content_length=len(storage_key) * 100,
+        content_hash=content_hash,
+        storage_key=storage_key,
+    )
