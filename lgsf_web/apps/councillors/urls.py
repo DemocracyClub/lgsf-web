@@ -34,4 +34,14 @@ urlpatterns = [
         views.CompareDetailView.as_view(),
         name="compare_detail",
     ),
+    path(
+        "summary/",
+        views.CouncilSummaryListView.as_view(),
+        name="summary_list",
+    ),
+    path(
+        "summary/<str:council_id>/",
+        views.CouncilSummaryDetailView.as_view(),
+        name="summary_detail",
+    ),
 ]
