@@ -118,7 +118,9 @@ jobs:
           command: npm ci
       - run:
           name: CDK deploy
-          command: uv run npx cdk deploy --require-approval never --all
+          # Not --all: LGSFEmbeddingsBatch, in development, is deployed by
+          # hand, so that CircleCI doesn't build and push its image.
+          command: uv run npx cdk deploy --require-approval never LGSFCodeDeployment
 
   code_deploy:
     docker:

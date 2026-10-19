@@ -3,6 +3,7 @@ import os
 from aws_cdk import App, Environment, Tags
 
 from cdk_stacks.stacks.code_deploy import CodeDeployment
+from cdk_stacks.stacks.embeddings_batch import EmbeddingsBatch
 
 valid_environments = (
     "development",
@@ -27,6 +28,11 @@ assert dc_environment in valid_environments, (
 
 
 CodeDeployment(app, "LGSFCodeDeployment", env=env)
+
+# For `manage.py embed_documents --remote`. Deployed by hand: see
+# cdk_stacks/stacks/embeddings_batch.py.
+if dc_environment == "development":
+    EmbeddingsBatch(app, "LGSFEmbeddingsBatch", env=env)
 
 
 Tags.of(app).add("dc-product", "lgsf")
