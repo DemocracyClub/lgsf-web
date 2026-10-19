@@ -9,6 +9,7 @@ Usage:
     ./manage.py embed_documents MAN --since 2026-01-01
     ./manage.py embed_documents MAN --stages extract,chunk     # no AWS needed
     ./manage.py embed_documents --source s3 --limit 3
+    ./manage.py embed_documents --remote --shards 20       # on AWS Batch
 
 Embedding needs AWS credentials with bedrock:InvokeModel, for example
 AWS_PROFILE=dev-lgsf-dc. Extracting and chunking need the embeddings
@@ -20,19 +21,22 @@ import collections
 import contextlib
 import datetime
 import importlib.util
+import json
+import tempfile
 import time
 from concurrent.futures.process import BrokenProcessPool
+from pathlib import Path
 
 from core.models import Document
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
-from embeddings import pipeline
+from embeddings import batch, pipeline
 from embeddings.embedders import EMBEDDERS
 from embeddings.extract import Device, ExtractStatus, worker_pool
 from embeddings.formats import detect_format
 from embeddings.sidecars import Stage
 from embeddings.stores import LocalStore, S3Store, Source
-from embeddings.tasks import build_tasks, read_manifest
+from embeddings.tasks import build_tasks, read_manifest, shard, write_manifest
 
 
 def parse_date(value):
@@ -152,15 +156,37 @@ class Command(BaseCommand):
             help="Say what would be done, without doing it",
         )
         parser.add_argument(
+            "--remote",
+            action="store_true",
+            help="Upload the tasks as a manifest and submit an AWS Batch "
+            "job to run them. With --dry-run, write the manifest locally "
+            "and show the job instead.",
+        )
+        parser.add_argument(
+            "--shards",
+            type=int,
+            default=1,
+            help="With --remote, how many Batch jobs to split the tasks "
+            "between (default 1)",
+        )
+        parser.add_argument(
             "--manifest",
             metavar="PATH",
             help="Run the tasks in a manifest directory, or s3:// URL, "
-            "instead of finding them in the database",
+            "instead of finding them in the database. The shard run is "
+            "the one numbered by AWS_BATCH_JOB_ARRAY_INDEX, or 0.",
         )
 
     def handle(self, *args, **options):
         self.options = options
+        if options["remote"] and options["manifest"]:
+            raise CommandError("--remote and --manifest can't be used together")
+        if options["shards"] < 1:
+            raise CommandError("--shards must be at least 1")
         tasks = self.get_tasks()
+        if options["remote"]:
+            self.submit(tasks)
+            return
         store = self.get_store()
 
         plans, existing = pipeline.plan_tasks(
@@ -179,7 +205,7 @@ class Command(BaseCommand):
     def get_tasks(self):
         options = self.options
         if options["manifest"]:
-            return read_manifest(options["manifest"])
+            return read_manifest(options["manifest"], batch.array_index())
 
         documents = Document.objects.all()
         if options["councils"]:
@@ -196,6 +222,84 @@ class Command(BaseCommand):
         if options["documents"]:
             documents = documents.filter(id__in=options["documents"])
         return build_tasks(documents, limit=options["limit"])
+
+    def submit(self, tasks):
+        """
+        Split the tasks into shards, upload them as a manifest and submit
+        a Batch job to run them. See batch.py.
+        """
+        options = self.options
+        run_id = batch.new_run_id()
+        shards = shard(tasks, options["shards"])
+        run = {
+            "run_id": run_id,
+            "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
+            "git_commit": batch.git_commit(),
+            "filters": {
+                "councils": options["councils"],
+                "since": options["since"] and options["since"].isoformat(),
+                "until": options["until"] and options["until"].isoformat(),
+                "documents": options["documents"],
+                "limit": options["limit"],
+            },
+            "tasks": len(tasks),
+            "shards": [len(tasks) for tasks in shards],
+        }
+        directory = Path(tempfile.mkdtemp(prefix=f"embedding-run-{run_id}-"))
+        write_manifest(directory, shards, run)
+        url = batch.manifest_url(
+            settings.LGSF_DATA_BUCKET, settings.EMBEDDINGS_RUNS_PREFIX, run_id
+        )
+        request = batch.job_request(
+            run_id,
+            url,
+            len(shards),
+            settings.EMBEDDINGS_BATCH_JOB_QUEUE,
+            settings.EMBEDDINGS_BATCH_JOB_DEFINITION,
+            self.worker_arguments(),
+        )
+        sizes = ", ".join(str(len(tasks)) for tasks in shards)
+        self.stdout.write(
+            f"{len(tasks)} files in {len(shards)} shards ({sizes})"
+        )
+        if options["dry_run"]:
+            self.stdout.write(f"Manifest written to {directory}")
+            self.stdout.write("Would submit:")
+            self.stdout.write(json.dumps(request, indent=2))
+            return
+
+        batch.upload_manifest(
+            directory,
+            settings.LGSF_DATA_BUCKET,
+            settings.EMBEDDINGS_RUNS_PREFIX,
+            run_id,
+        )
+        job_id = batch.submit_job(request)
+        self.stdout.write(f"Run {run_id}, manifest {url}")
+        self.stdout.write(f"Submitted job {job_id}")
+
+    def worker_arguments(self):
+        """The options a Batch worker is given, from this command's."""
+        options = self.options
+        arguments = [
+            "--stages",
+            ",".join(options["stages"]),
+            "--device",
+            str(options["device"]),
+            "--workers",
+            str(options["workers"]),
+            "--threads",
+            str(options["threads"]),
+            "--timeout",
+            str(options["timeout"]),
+        ]
+        if options["max_pages"]:
+            arguments += ["--max-pages", str(options["max_pages"])]
+        if options["retry_failed"]:
+            arguments.append("--retry-failed")
+        if options["force"]:
+            arguments.append("--force")
+        return arguments
 
     def get_store(self):
         if self.options["source"] == Source.S3:
