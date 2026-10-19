@@ -66,6 +66,16 @@ class Decision(index.Indexed, models.Model):
         ),
     )
 
+    # At least for now, we probably DON'T want to rebuild the index
+    # using signals for performance reasons.
+    # Insert data, then rebuild with
+    # rebuild_modelsearch_index as a post-process
+    #
+    # Ideally, we would set this globally using the AUTO_UPDATE setting
+    # but this is not respected due to a bug
+    # https://github.com/wagtail/django-modelsearch/issues/119
+    search_auto_update = False
+
     def __str__(self):
         return f"{self.council}/{self.raw_identifier}: {self.raw_title}"
 

@@ -170,12 +170,6 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 MODELSEARCH_BACKENDS = {
     "default": {
         "BACKEND": "modelsearch.backends.database",
-        ###
-        # At least for now, we probably DON'T want to rebuild the index
-        # using signals for performance reasons.
-        # Insert data, then rebuild with
-        # rebuild_modelsearch_index as a post-process
-        "AUTO_UPDATE": False,
     }
 }
 
