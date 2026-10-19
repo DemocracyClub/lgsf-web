@@ -22,6 +22,7 @@ Docling as a stream named with the extension of the format found here:
 see stream_name().
 """
 
+import io
 import re
 import zipfile
 from enum import StrEnum
@@ -185,6 +186,39 @@ def unwrap_multipart(data: bytes) -> bytes:
     if not separator:
         raise ValueError("The multipart body has no closing boundary")
     return part
+
+
+#: The content types of a Word template's main part, and of a Word
+#: document's.
+_WORD_TEMPLATE = (
+    b"application/vnd.openxmlformats-officedocument.wordprocessingml"
+    b".template.main+xml"
+)
+_WORD_DOCUMENT = (
+    b"application/vnd.openxmlformats-officedocument.wordprocessingml"
+    b".document.main+xml"
+)
+
+
+def as_word_document(data: bytes) -> bytes:
+    """
+    A DOCX, with its content type changed from a Word template's to a
+    Word document's if it's a template. 38 of the 39 DOCX files in the
+    data are saved as templates. python-docx, which Docling reads them
+    with, won't open a template, and the parts are the same in each.
+    """
+    source = zipfile.ZipFile(io.BytesIO(data))
+    content_types = source.read("[Content_Types].xml")
+    if _WORD_TEMPLATE not in content_types:
+        return data
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w", zipfile.ZIP_DEFLATED) as target:
+        for member in source.infolist():
+            contents = source.read(member)
+            if member.filename == "[Content_Types].xml":
+                contents = contents.replace(_WORD_TEMPLATE, _WORD_DOCUMENT)
+            target.writestr(member, contents)
+    return output.getvalue()
 
 
 def _zip_format(path: Path) -> DocumentFormat:

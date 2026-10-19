@@ -4,12 +4,14 @@ copy, and made up where there isn't. Each is stored under its storage
 key.
 """
 
+import io
 import zipfile
 from pathlib import Path
 
 import pytest
 from embeddings.formats import (
     DocumentFormat,
+    as_word_document,
     detect_format,
     stream_name,
     unwrap_multipart,
@@ -84,6 +86,27 @@ def test_unwrap_multipart_without_a_closing_boundary():
 def test_docx():
     path = FIXTURES / "NTL" / "2019-10-24-2201-s54786.pdf"
     assert detect_format(path) == DocumentFormat.DOCX
+
+
+def test_a_word_template_as_a_document():
+    data = (FIXTURES / "NTL" / "2019-10-24-2201-s54786.pdf").read_bytes()
+    converted = zipfile.ZipFile(io.BytesIO(as_word_document(data)))
+    original = zipfile.ZipFile(io.BytesIO(data))
+    content_types = converted.read("[Content_Types].xml")
+    assert b"wordprocessingml.document.main+xml" in content_types
+    assert b"wordprocessingml.template.main+xml" not in content_types
+    assert converted.namelist() == original.namelist()
+    assert converted.read("word/document.xml") == original.read(
+        "word/document.xml"
+    )
+
+
+def test_a_word_document_is_left_alone(tmp_path):
+    output = io.BytesIO()
+    with zipfile.ZipFile(output, "w") as archive:
+        archive.writestr("[Content_Types].xml", b"<Types/>")
+        archive.writestr("word/document.xml", b"<document/>")
+    assert as_word_document(output.getvalue()) == output.getvalue()
 
 
 @pytest.mark.parametrize(
