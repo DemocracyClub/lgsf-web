@@ -174,6 +174,12 @@ MODELSEARCH_BACKENDS = {
 }
 
 
+LGSF_DATA_DIR = Path(
+    os.environ.get("LGSF_DATA_DIR", BASE_DIR.parent / "data")
+).resolve()
+LGSF_DATA_BUCKET = "lgsf-data-archive"
+
+
 if sentry_dsn := os.environ.get("SENTRY_DSN"):
     import sentry_sdk
     from sentry_sdk.integrations import django

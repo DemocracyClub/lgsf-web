@@ -1,8 +1,10 @@
 """
-Import scraped decisions and documents from ./data/<COUNCIL>/Decisions/json/.
+Import scraped decisions and documents from <LGSF_DATA_DIR>/<COUNCIL>/Decisions/json/.
+
+LGSF_DATA_DIR defaults to ./data, and can be set in the environment.
 
 Usage:
-    ./manage.py import_decisions                       # import all councils found in ./data
+    ./manage.py import_decisions                       # import all councils found in LGSF_DATA_DIR
     ./manage.py import_decisions AGY SWA                # just these councils
     ./manage.py import_decisions --after 2020-01-01     # only files dated on/after this
     ./manage.py import_decisions --before 2020-12-31    # only files dated on/before this
@@ -12,7 +14,6 @@ import json
 import logging
 import re
 from datetime import UTC, datetime
-from pathlib import Path
 
 from core.models import Decision, Document
 from django.conf import settings
@@ -23,8 +24,7 @@ from pypdf import PdfReader
 
 _CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
 
-# settings.BASE_DIR is the lgsf_web package dir; data/ lives alongside manage.py, one level up
-DATA_DIR = Path(settings.BASE_DIR).parent / "data"
+DATA_DIR = settings.LGSF_DATA_DIR
 
 
 logger = logging.getLogger(__name__)
@@ -98,13 +98,13 @@ VERBOSITY_TO_LOG_LEVEL = {
 
 
 class Command(BaseCommand):
-    help = "Import scraped decisions and documents from ./data/<COUNCIL>/Decisions/json/"
+    help = "Import scraped decisions and documents from <LGSF_DATA_DIR>/<COUNCIL>/Decisions/json/"
 
     def add_arguments(self, parser):
         parser.add_argument(
             "councils",
             nargs="*",
-            help="Council codes to import. Defaults to all councils found in ./data.",
+            help="Council codes to import. Defaults to all councils found in LGSF_DATA_DIR.",
         )
         parser.add_argument(
             "--after",
