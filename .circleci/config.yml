@@ -4,6 +4,17 @@ jobs:
   test:
     docker:
       - image: cimg/python:3.12-node
+        environment:
+          DB_NAME: lgsf_web
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_HOST: 127.0.0.1
+          DB_PORT: 5432
+      - image: cimg/postgres:16.3
+        environment:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: lgsf_web
     working_directory: ~/repo
     steps:
       - checkout
@@ -23,7 +34,17 @@ jobs:
           command: |
             uv run ruff format . --check
             uv run ruff check .
-      # TODO: set up pytest + run it once we have tests
+      - run:
+          name: Run tests
+          command: uv run pytest
+      - run:
+          name: Prune the uv cache
+          command: uv cache prune --ci
+      - save_cache:
+          when: on_success
+          paths:
+            - ~/.cache/uv
+          key: v1-dependencies-{{ checksum "uv.lock" }}
 
   cdk_synth:
     docker:
