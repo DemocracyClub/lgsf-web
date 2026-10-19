@@ -180,6 +180,20 @@ LGSF_DATA_DIR = Path(
 ).resolve()
 LGSF_DATA_BUCKET = "lgsf-data-archive"
 
+# Where `embed_documents --remote` uploads its manifests, in
+# LGSF_DATA_BUCKET, and the AWS Batch queue and job definition it submits
+# to. The defaults are the names cdk_stacks/stacks/embeddings_batch.py
+# gives them.
+EMBEDDINGS_RUNS_PREFIX = os.environ.get(
+    "EMBEDDINGS_RUNS_PREFIX", "embedding-runs/"
+)
+EMBEDDINGS_BATCH_JOB_QUEUE = os.environ.get(
+    "EMBEDDINGS_BATCH_JOB_QUEUE", "lgsf-embeddings"
+)
+EMBEDDINGS_BATCH_JOB_DEFINITION = os.environ.get(
+    "EMBEDDINGS_BATCH_JOB_DEFINITION", "lgsf-embeddings"
+)
+
 
 if sentry_dsn := os.environ.get("SENTRY_DSN"):
     import sentry_sdk
