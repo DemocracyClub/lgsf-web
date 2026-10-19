@@ -1,27 +1,27 @@
 <table>
 <thead>
 <tr>
-    <th>Field</th>
-    <th>Scraped</th>
-    <th>Enriched Value</th>
-    <th>Enriched Id</th>
+    <th>Field:</th>
+    <th>Scraped:</th>
+    <th>Enriched Value:</th>
+    <th>Enriched Id:</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-    <th>Division</th>
+    <th><strong>Name</strong></th>
+    <td>{{ scraped.raw_name }}</td>
+    <td>{{ enriched.ynr_name }}</td>
+    <td>{{ enriched.ynr_id|default:"" }}</td>
+</tr>
+<tr>
+    <th><strong>Division</strong></th>
     <td>{{ scraped.raw_division }}</td>
     <td>{{ enriched.ee_division_name }}</td>
     <td>{{ enriched.ee_division_id }}</td>
 </tr>
 <tr>
-    <th>Name</th>
-    <td>{{ scraped.raw_name }}</td>
-    <td>{{ enriched.ynr_name }}</td>
-    <td>{{ enriched.ynr_id }}</td>
-</tr>
-<tr>
-    <th>Party</th>
+    <th><strong>Party</strong></th>
     <td>{{ scraped.raw_party }}</td>
     <td>{{ enriched.ynr_party_name }}</td>
     <td>{{ enriched.ynr_party_id }}</td>

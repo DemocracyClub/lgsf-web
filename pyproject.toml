@@ -15,6 +15,7 @@ dependencies = [
     "pypdf==6.20.1",
     "requests==2.34.2",
     "dc-django-utils",
+    "django-filter==26.2",
 ]
 
 [dependency-groups]
