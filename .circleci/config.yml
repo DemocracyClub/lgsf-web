@@ -28,7 +28,7 @@ jobs:
           command: ./deploy/hooks/afterinstall/install_uv.sh
       - run:
           name: Install Python dependencies
-          command: uv sync
+          command: uv sync --group embeddings
       - run:
           name: Run code checks
           command: |
