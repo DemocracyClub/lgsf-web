@@ -24,6 +24,13 @@ class SourceType(StrEnum):
 
     #: A PDF converted by Docling.
     PDF_DOCLING = "pdf_docling"
+    #: Other formats Docling converts. See formats.SOURCE_TYPES.
+    DOCX_DOCLING = "docx_docling"
+    XLSX_DOCLING = "xlsx_docling"
+    PPTX_DOCLING = "pptx_docling"
+    IMAGE_DOCLING = "image_docling"
+    TEXT_DOCLING = "text_docling"
+    CSV_DOCLING = "csv_docling"
 
 
 @dataclass
