@@ -12,6 +12,7 @@ from aws_cdk import aws_ssm as ssm
 from constructs import Construct
 
 from cdk_stacks.stacks.code_deploy_policies import (
+    CODE_DEPLOY_EC2_POLICY,
     CODE_DEPLOY_LAUNCH_TEMPLATE_POLICY,
     CODE_DEPLOY_POLICY,
     DEPLOYER_POLICY,
@@ -216,6 +217,11 @@ class CodeDeployment(Stack):
                 "CodeDeployLaunchTemplatePermissions",
                 CODE_DEPLOY_LAUNCH_TEMPLATE_POLICY,
             ),
+            "codedeploy-ec2-permissions": create_policy(
+                "codedeploy-ec2-permissions-id",
+                "CodeDeploy-EC2-Permissions",
+                CODE_DEPLOY_EC2_POLICY,
+            ),
             "codedeploy-and-related-services": create_policy(
                 "codedeploy-and-related-services-id",
                 "CodeDeployAndRelatedServices",
@@ -258,14 +264,9 @@ class CodeDeployment(Stack):
             ),
         }
 
-        """
-        TODO: if we need to give the EC2 instance to do stuff like
-        write to a S3 bucket, write a policy + attach it here:
-
         roles["codedeploy-ec2-instance-profile"].attach_inline_policy(
             self.policies["codedeploy-ec2-permissions"]
         )
-        """
         roles["codedeploy-service-role"].attach_inline_policy(
             self.policies["codedeploy-launch-template-permissions"]
         )

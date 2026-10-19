@@ -89,6 +89,33 @@ CODE_DEPLOY_POLICY = {
     ],
 }
 
+CODE_DEPLOY_EC2_POLICY = {
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Action": ["s3:Get*", "s3:List*"],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::aws-codedeploy-eu-west-2/*",
+        },
+        {
+            "Action": ["s3:Get*", "s3:List*"],
+            "Effect": "Allow",
+            "Resource": "arn:aws:s3:::lgsf-data-archive/*",
+        },
+        {
+            "Action": [
+                "events:DescribeEventBus",
+                "events:PutEvents",
+                "events:ListEventBuses",
+            ],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:events:eu-west-2:*:event-bus/default",
+            ],
+        },
+    ],
+}
+
 CODE_DEPLOY_LAUNCH_TEMPLATE_POLICY = {
     "Version": "2012-10-17",
     "Statement": [
