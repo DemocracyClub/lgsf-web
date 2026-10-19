@@ -27,3 +27,6 @@ cdk.context.json
 
 # data we've synced from S3
 data/
+
+# IDEs
+.idea
