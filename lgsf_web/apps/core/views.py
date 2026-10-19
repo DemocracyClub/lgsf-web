@@ -3,6 +3,7 @@ from core.models import Decision
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import DetailView
+from modelsearch.query import Phrase
 
 
 def hello_world(request):
@@ -38,6 +39,8 @@ def decision_search(request):
             queryset = queryset.filter(is_subject_to_call_in=True)
 
         if query := form.cleaned_data["q"]:
+            if form.cleaned_data["search_mode"] == "phrase":
+                query = Phrase(query)
             results = queryset.search(query)
         else:
             results = queryset

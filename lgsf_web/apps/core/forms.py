@@ -61,3 +61,13 @@ class DecisionSearchForm(forms.Form):
         label="Subject to call-in only",
         required=False,
     )
+    search_mode = forms.ChoiceField(
+        label="Search mode",
+        required=False,
+        choices=[
+            ("simple", "Simple search"),
+            ("phrase", "Exact phrase"),
+        ],
+        initial="simple",
+        widget=forms.RadioSelect,
+    )

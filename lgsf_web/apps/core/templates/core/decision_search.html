@@ -38,6 +38,16 @@
                 {{ form.is_subject_to_call_in.label }}
               </label>
             </fieldset>
+
+            <fieldset>
+              <legend>{{ form.search_mode.label }}</legend>
+              {% for radio in form.search_mode %}
+                <label for="{{ radio.id_for_label }}">
+                  {{ radio.tag }}
+                  {{ radio.choice_label }}
+                </label>
+              {% endfor %}
+            </fieldset>
             <button type="submit">Search</button>
         </form>
 
