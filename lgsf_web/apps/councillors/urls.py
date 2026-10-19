@@ -4,6 +4,7 @@ from django.urls import path
 app_name = "councillors"
 
 urlpatterns = [
+    path("", views.LandingView.as_view(), name="landing"),
     path(
         "scraped/",
         views.ScrapedCouncillorListView.as_view(),

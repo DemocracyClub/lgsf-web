@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Councillors</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+    <h1>Councillors</h1>
+    <ul>
+      <li><a href="{% url 'councillors:summary_list' %}">Council summaries</a> &ndash; completeness stats overall and per council</li>
+      <li><a href="{% url 'councillors:scraped_list' %}">Scraped councillors</a> &ndash; list of scraped councillors</li>
+      <li><a href="{% url 'councillors:enriched_list' %}">Enriched councillors</a> &ndash; list of enriched councillors</li>
+      <li><a href="{% url 'councillors:compare_list' %}">Compare councillors</a> &ndash; list of scraped/enriched councillor comparisons </li>
+    </ul>
+  </main>
+</body>
+</html>

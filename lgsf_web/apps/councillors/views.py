@@ -140,3 +140,7 @@ class CouncilSummaryDetailView(TemplateView):
             council_id=council_id, total=total, no_enriched=no_enriched, stats=stats
         )
         return context
+
+
+class LandingView(TemplateView):
+    template_name = "councillors/landing.html"
