@@ -95,7 +95,7 @@ class CodeDeployment(Stack):
                         ec2.EbsDeviceProps(
                             iops=6000,
                             volume_type=ec2.EbsDeviceVolumeType.GP3,
-                            volume_size=20,
+                            volume_size=100,
                         )
                     ),
                 )
