@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.db import models
 from modelsearch import index
 from modelsearch.queryset import SearchableQuerySetMixin
@@ -111,7 +112,7 @@ class Document(models.Model):
 
     @property
     def s3_url(self):
-        return f"https://lgsf-data-archive.s3.eu-west-2.amazonaws.com/data/{self.decision.council_id}/Decisions/documents/{self.storage_key}"
+        return f"https://{settings.LGSF_DATA_BUCKET}.s3.eu-west-2.amazonaws.com/data/{self.decision.council_id}/Decisions/documents/{self.storage_key}"
 
     def __str__(self):
         return self.title or self.storage_key
