@@ -17,15 +17,20 @@ dependency group: uv sync --group embeddings.
 
 import argparse
 import collections
+import contextlib
 import datetime
+import importlib.util
+import time
+from concurrent.futures.process import BrokenProcessPool
 
 from core.models import Document
 from django.conf import settings
 from django.core.management.base import BaseCommand, CommandError
+from embeddings import pipeline
 from embeddings.embedders import EMBEDDERS
-from embeddings.extract import Device
+from embeddings.extract import Device, ExtractStatus, worker_pool
 from embeddings.formats import detect_format
-from embeddings.sidecars import Stage, list_keys, plan_task, read_statuses
+from embeddings.sidecars import Stage
 from embeddings.stores import LocalStore, S3Store, Source
 from embeddings.tasks import build_tasks, read_manifest
 
@@ -158,26 +163,18 @@ class Command(BaseCommand):
         tasks = self.get_tasks()
         store = self.get_store()
 
-        existing = list_keys(store, tasks)
-        statuses = read_statuses(store, tasks, existing)
-        plans = [
-            plan_task(
-                task,
-                {
-                    key: statuses[(task.council, key)]
-                    for key in task.storage_keys
-                },
-                options["stages"],
-                list(EMBEDDERS),
-                retry_failed=options["retry_failed"],
-                force=options["force"],
-            )
-            for task in tasks
-        ]
+        plans, existing = pipeline.plan_tasks(
+            tasks,
+            store,
+            options["stages"],
+            list(EMBEDDERS),
+            retry_failed=options["retry_failed"],
+            force=options["force"],
+        )
         if options["dry_run"]:
             self.output_plan(plans, store, existing)
             return
-        raise CommandError("Only --dry-run is implemented so far")
+        self.run(plans, store)
 
     def get_tasks(self):
         options = self.options
@@ -257,7 +254,179 @@ class Command(BaseCommand):
             order=["extract", "chunk", "embed", "copy", "nothing"],
         )
 
+    def run(self, plans, store):
+        options = self.options
+        to_work = [plan for plan in plans if plan.needs_worker]
+        if to_work and importlib.util.find_spec("docling") is None:
+            raise CommandError(
+                "docling isn't installed. Run: uv sync --group embeddings"
+            )
+        embedders = []
+        if Stage.EMBED in options["stages"]:
+            embedders = [embedder() for embedder in EMBEDDERS.values()]
+
+        done = sum(plan.nothing_to_do() for plan in plans)
+        self.stdout.write(
+            f"{len(plans) - done} of {len(plans)} files to work on, "
+            f"{len(to_work)} of them to extract or chunk. {done} done before."
+        )
+        self.outcomes = []
+        self.to_do = len(plans) - done
+        start = time.monotonic()
+        executor = (
+            worker_pool(
+                options["workers"],
+                options["threads"],
+                options["timeout"],
+                options["device"],
+            )
+            if to_work
+            else contextlib.nullcontext()
+        )
+        stopped = None
+        try:
+            with executor:
+                pipeline.run(
+                    plans,
+                    store,
+                    embedders,
+                    pipeline.Options(
+                        stages=options["stages"],
+                        max_pages=options["max_pages"],
+                        force=options["force"],
+                    ),
+                    executor,
+                    self.output_outcome,
+                )
+        except KeyboardInterrupt:
+            stopped = "Stopped."
+        except BrokenProcessPool:
+            stopped = (
+                "A worker process stopped, perhaps because it ran out of "
+                "memory. Fewer --workers use less."
+            )
+        self.output_summary(time.monotonic() - start)
+        if stopped:
+            raise CommandError(
+                f"{stopped} What's been written is kept: run the same "
+                "command again to carry on."
+            )
+
+    def output_outcome(self, outcome):
+        """A line for each file, as it's finished."""
+        self.outcomes.append(outcome)
+        task = outcome.plan.task
+        result = outcome.result
+        parts = []
+        if outcome.error:
+            parts.append(f"error: {outcome.error.strip().splitlines()[-1]}")
+        elif result.missing:
+            parts.append("not found")
+        elif result.too_long:
+            parts.append(f"left out, {result.too_long} pages")
+        else:
+            status = outcome.status
+            if result.extract:
+                extract = result.extract
+                parts.append(
+                    " ".join(
+                        str(part)
+                        for part in (
+                            status.format,
+                            extract.status,
+                            f"{extract.pages} pages" if extract.pages else "",
+                            f"{extract.seconds}s",
+                        )
+                        if part
+                    )
+                )
+                if extract.error:
+                    parts.append(f"error: {extract.error}")
+            elif outcome.plan.copy_from:
+                parts.append(f"copied from {outcome.plan.copy_from}")
+            if result.chunk:
+                if result.chunk.error:
+                    parts.append(f"chunk error: {result.chunk.error}")
+                else:
+                    parts.append(f"{result.chunk.chunks} chunks")
+            for name in outcome.embedded_with:
+                entry = status.embed[name]
+                if entry.error:
+                    parts.append(f"{name} error: {entry.error}")
+                else:
+                    parts.append(
+                        f"{name} {entry.embedded} embedded, "
+                        f"{entry.reused} reused"
+                    )
+            if outcome.copied_to:
+                parts.append(f"copied to {len(outcome.copied_to)} keys")
+        self.stdout.write(
+            f"[{len(self.outcomes)}/{self.to_do}] {task.council} "
+            f"{task.primary.storage_key}: " + "; ".join(parts)
+        )
+
+    def output_summary(self, elapsed):
+        extracted = collections.Counter()
+        totals = collections.Counter()
+        for outcome in self.outcomes:
+            result = outcome.result
+            if outcome.error:
+                totals["errors"] += 1
+                continue
+            if result.missing:
+                totals["not found"] += 1
+            if result.too_long:
+                totals["too long"] += 1
+            if result.extract:
+                extracted[str(result.extract.status)] += 1
+                totals["pages"] += result.extract.pages or 0
+            if result.chunk:
+                if result.chunk.error:
+                    totals["chunk errors"] += 1
+                else:
+                    totals["chunked"] += 1
+                    totals["chunks"] += result.chunk.chunks
+            if outcome.status:
+                for name in outcome.embedded_with:
+                    entry = outcome.status.embed[name]
+                    if entry.error:
+                        totals["embed errors"] += 1
+                    totals["embedded"] += entry.embedded
+                    totals["tokens"] += entry.tokens
+            totals["copies"] += len(outcome.copied_to)
+
+        self.output_counts(
+            "Extracted",
+            extracted,
+            order=list(ExtractStatus),
+        )
+        self.output_counts(
+            "Totals",
+            totals,
+            order=[
+                "pages",
+                "chunked",
+                "chunks",
+                "embedded",
+                "tokens",
+                "copies",
+                "not found",
+                "too long",
+                "chunk errors",
+                "embed errors",
+                "errors",
+            ],
+        )
+        rate = (
+            f", {elapsed / totals['pages']:.2f}s a page"
+            if totals["pages"]
+            else ""
+        )
+        self.stdout.write(f"\nIn {elapsed:.0f}s{rate}")
+
     def output_counts(self, title, counts, order=None):
+        if not any(counts.values()):
+            return
         self.stdout.write(f"\n{title}:")
         names = order or [name for name, _ in counts.most_common()]
         for name in names:
