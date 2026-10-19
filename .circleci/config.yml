@@ -144,7 +144,6 @@ workflows:
           dc-environment: development
           requires:
             - test
-          filters: { branches: { only: [main] } }
           context: [deployment-development-lgsf]
 
       - cdk_deploy:
