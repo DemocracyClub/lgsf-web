@@ -11,7 +11,7 @@ npm ci
 ### DB
 
 ```sh
-createuser lgsf_web --pwprompt
+createuser lgsf_web --pwprompt --createdb
 createdb lgsf_web -O lgsf_web
 ```
 
@@ -39,3 +39,9 @@ uv run manage.py migrate
 ```
 
 If you already have data in the db, then add `--clean --if-exists`.
+
+## Tests
+
+```sh
+uv run pytest
+```
