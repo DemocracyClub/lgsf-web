@@ -1,0 +1,14 @@
+# Only Dockerfile.embeddings builds from here, and it needs only the
+# Python code. DockerImageAsset fingerprints the whole build context, so
+# anything large left in it is hashed on every cdk synth.
+.git
+.venv
+.idea
+.ruff_cache
+.pytest_cache
+.env
+data/
+node_modules/
+cdk.out/
+lgsf_web/static/
+**/__pycache__
