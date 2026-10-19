@@ -65,6 +65,30 @@ def get_document_text(doc, council):
     return clean_text(text)
 
 
+def document_fields(doc):
+    return {
+        "attachment_id": doc["attachment_id"] or "",
+        "title": doc["title"],
+        "url": doc["url"],
+        "content_type": doc["content_type"] or "",
+        "content_length": doc["content_length"],
+        "content_hash": doc["content_hash"],
+        "etag": doc["etag"] or "",
+        "last_modified": doc["last_modified"],
+        "storage_backend": doc["storage_backend"],
+        "storage_key": doc["storage_key"],
+    }
+
+
+def document_changed(db_doc, doc):
+    etag_matches = bool(db_doc.etag) and db_doc.etag == doc["etag"]
+    last_modified_matches = (
+        bool(db_doc.last_modified)
+        and db_doc.last_modified == doc["last_modified"]
+    )
+    return not (etag_matches or last_modified_matches)
+
+
 VERBOSITY_TO_LOG_LEVEL = {
     0: logging.ERROR,
     1: logging.WARNING,
@@ -177,24 +201,8 @@ class Command(BaseCommand):
             },
         )
 
-        # re-import documents fresh each time, rather than trying to diff/upsert them
-        # TODO: update_or_create on storage_key?
-        decision.documents.all().delete()
-        documents = [
-            Document(
-                decision=decision,
-                attachment_id=doc["attachment_id"] or "",
-                title=doc["title"],
-                url=doc["url"],
-                content_type=doc["content_type"] or "",
-                content_length=doc["content_length"],
-                content_hash=doc["content_hash"],
-                etag=doc["etag"] or "",
-                last_modified=doc["last_modified"],
-                storage_backend=doc["storage_backend"],
-                storage_key=doc["storage_key"],
-                text=get_document_text(doc, council),
-            )
+        json_docs = [
+            doc
             for doc in data["documents"]
             ###
             # workaround for bug in scrapers
@@ -207,5 +215,33 @@ class Command(BaseCommand):
             and "content_type" in doc
             and "etag" in doc
         ]
-        Document.objects.bulk_create(documents)
-        return len(documents)
+
+        # defer text so unchanged documents don't load their (large) extracted text
+        existing = {d.storage_key: d for d in decision.documents.defer("text")}
+
+        to_create = []
+        imported = 0
+        for doc in json_docs:
+            db_doc = existing.get(doc["storage_key"])
+            if db_doc is None:
+                to_create.append(
+                    Document(
+                        decision=decision,
+                        text=get_document_text(doc, council),
+                        **document_fields(doc),
+                    )
+                )
+            elif document_changed(db_doc, doc):
+                for field, value in document_fields(doc).items():
+                    setattr(db_doc, field, value)
+                db_doc.text = get_document_text(doc, council)
+                db_doc.save()
+            else:
+                continue
+            imported += 1
+
+        Document.objects.bulk_create(to_create)
+
+        json_keys = {doc["storage_key"] for doc in json_docs}
+        decision.documents.exclude(storage_key__in=json_keys).delete()
+        return imported
