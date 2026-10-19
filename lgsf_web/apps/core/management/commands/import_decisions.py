@@ -223,21 +223,30 @@ class Command(BaseCommand):
         imported = 0
         for doc in json_docs:
             db_doc = existing.get(doc["storage_key"])
+            if db_doc is not None and not document_changed(db_doc, doc):
+                continue
+
+            try:
+                text = get_document_text(doc, council)
+            except Exception:
+                logger.exception(
+                    "Failed to extract text for document %s (%s); skipping",
+                    doc["storage_key"],
+                    council,
+                )
+                continue
+
             if db_doc is None:
                 to_create.append(
                     Document(
-                        decision=decision,
-                        text=get_document_text(doc, council),
-                        **document_fields(doc),
+                        decision=decision, text=text, **document_fields(doc)
                     )
                 )
-            elif document_changed(db_doc, doc):
+            else:
                 for field, value in document_fields(doc).items():
                     setattr(db_doc, field, value)
-                db_doc.text = get_document_text(doc, council)
+                db_doc.text = text
                 db_doc.save()
-            else:
-                continue
             imported += 1
 
         Document.objects.bulk_create(to_create)
