@@ -46,6 +46,18 @@ LEFT_OUT = frozenset(
     }
 )
 
+
+class Device(StrEnum):
+    """
+    What Docling runs its models on. Docling's own AcceleratorDevice
+    isn't used, so that this module imports without Docling.
+    """
+
+    AUTO = "auto"
+    CPU = "cpu"
+    CUDA = "cuda"
+
+
 #: The status of each format that's left out.
 LEFT_OUT_FORMATS = {
     DocumentFormat.RESTRICTED: ExtractStatus.RESTRICTED,
