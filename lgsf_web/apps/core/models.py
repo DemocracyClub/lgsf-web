@@ -101,5 +101,13 @@ class Document(models.Model):
 
     text = models.TextField(blank=True)
 
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=["decision", "storage_key"],
+                name="unique_decision_document_storage_key",
+            ),
+        )
+
     def __str__(self):
         return self.title or self.storage_key
