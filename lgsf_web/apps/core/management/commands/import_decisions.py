@@ -16,6 +16,7 @@ from pathlib import Path
 
 from core.models import Decision, Document
 from django.conf import settings
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from pypdf import PdfReader
@@ -119,6 +120,9 @@ class Command(BaseCommand):
                 documents_imported = self.import_file(council, file_path)
                 total_decisions += 1
                 total_documents += documents_imported
+
+        # finally, rebuild the search index
+        call_command("rebuild_modelsearch_index")
 
         self.stdout.write(
             self.style.SUCCESS(
