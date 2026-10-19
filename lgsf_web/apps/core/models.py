@@ -109,5 +109,9 @@ class Document(models.Model):
             ),
         )
 
+    @property
+    def s3_url(self):
+        return f"https://lgsf-data-archive.s3.eu-west-2.amazonaws.com/data/{self.decision.council}/Decisions/documents/{self.storage_key}"
+
     def __str__(self):
         return self.title or self.storage_key

@@ -17,7 +17,7 @@
             {% if decision.documents.all %}
                 <ul>
                     {% for document in decision.documents.all %}
-                        <li><a href="{{ document.url }}">{{ document.title }}</a></li>
+                        <li><a target="_blank" href="{{ document.s3_url }}">{{ document.title }}</a></li>
                     {% endfor %}
                 </ul>
             {% endif %}
