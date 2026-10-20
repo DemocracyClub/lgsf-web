@@ -1,3 +1,5 @@
+from pathlib import Path
+
 WELSH_COUNCILS = [
     "AGY",
     "GWN",
@@ -37,3 +39,6 @@ GREATER_MANCHESTER_COUNCILS = [
 ]
 
 ALL_COUNCILS = WELSH_COUNCILS + GREATER_MANCHESTER_COUNCILS
+
+
+DATA_DIR = Path("lgsf_web/apps/councillors/temp_data/")

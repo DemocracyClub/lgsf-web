@@ -16,6 +16,7 @@ dependencies = [
     "requests==2.34.2",
     "dc-django-utils",
     "django-filter==26.2",
+    "dc-name-matching",
 ]
 
 [dependency-groups]
@@ -61,6 +62,7 @@ embeddings-gpu = [
 
 [tool.uv.sources]
 dc-django-utils = { git = "https://github.com/DemocracyClub/dc_django_utils.git", tag = "8.0.5" }
+dc-name-matching = { git = "https://github.com/DemocracyClub/dc-name-matching" }
 # torch from PyPI is the CUDA build on Linux, which brings several GB of
 # NVIDIA libraries. The embeddings group runs on CPU, so it takes torch
 # from PyTorch's CPU-only index instead. torchvision, which Docling
