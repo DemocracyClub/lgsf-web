@@ -2,6 +2,7 @@ from django.conf import settings
 from django.db import models
 from modelsearch import index
 from modelsearch.queryset import SearchableQuerySetMixin
+from pgvector.django import VectorField
 
 
 class DecisionQuerySet(SearchableQuerySetMixin, models.QuerySet):
@@ -116,6 +117,54 @@ class Document(models.Model):
 
     def __str__(self):
         return self.title or self.storage_key
+
+
+class Chunk(models.Model):
+    document = models.ForeignKey(
+        Document, related_name="chunks", on_delete=models.CASCADE
+    )
+
+    chunk_id = models.CharField(max_length=1024, unique=True)
+    parent_id = models.CharField(max_length=1024)
+    chunk_index = models.PositiveIntegerField()
+    chunk_count = models.PositiveIntegerField()
+
+    context = models.TextField()
+    text = models.TextField()
+    text_hash = models.CharField(max_length=255)
+    word_count = models.PositiveIntegerField()
+
+    date = models.DateField()
+    embed = models.BooleanField()
+    source_type = models.CharField(max_length=255)
+    type = models.CharField(max_length=255)
+    metadata = models.JSONField()
+
+    class Meta:
+        constraints = (
+            models.UniqueConstraint(
+                fields=["document", "chunk_index"],
+                name="unique_document_chunk_index",
+            ),
+        )
+        ordering = ("document", "chunk_index")
+
+    def __str__(self):
+        return self.chunk_id
+
+
+class Embedding(models.Model):
+    chunk = models.OneToOneField(
+        Chunk, related_name="embedding", on_delete=models.CASCADE
+    )
+    model = models.CharField(max_length=255)
+    token_count = models.PositiveIntegerField()
+    # TODO: probably need a vector index: HNSW or IVFFlat
+    # come back to this
+    embedding = VectorField(dimensions=1024)
+
+    def __str__(self):
+        return f"{self.model}: {self.chunk_id}"
 
 
 class Council(models.Model):
