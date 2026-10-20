@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{{ object.raw_name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+    <p><a href="{% url 'councillors:scraped_list' %}">&larr; All scraped councillors</a></p>
+    <h1>{{ object.raw_name }}</h1>
+    <dl>
+      <dt>Council</dt><dd>{{ object.council_id }}</dd>
+      <dt>Identifier</dt><dd>{{ object.raw_identifier }}</dd>
+      <dt>Division</dt><dd>{{ object.raw_division }}</dd>
+      <dt>Party</dt><dd>{{ object.raw_party }}</dd>
+      <dt>Email</dt><dd>{{ object.raw_email }}</dd>
+      <dt>Photo URL</dt><dd>{{ object.photo_url }}</dd>
+      <dt>URL</dt><dd><a href="{{ object.url }}">{{ object.url }}</a></dd>
+    </dl>
+    {% if object.enriched %}
+      <p><a href="{% url 'councillors:enriched_detail' object.enriched.pk %}">View enriched record</a>
+      | <a href="{% url 'councillors:compare_detail' object.pk %}">Compare</a></p>
+    {% endif %}
+  </main>
+</body>
+</html>

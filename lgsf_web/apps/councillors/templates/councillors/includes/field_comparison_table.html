@@ -1,0 +1,38 @@
+<table>
+<thead>
+<tr>
+    <th>Field:</th>
+    <th>Scraped:</th>
+    <th>Enriched Value:</th>
+    <th>Enriched Id:</th>
+    <th>Backend:</th>
+    <th>Confidence:</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+    <th><strong>Name</strong></th>
+    <td>{{ scraped.raw_name }}</td>
+    <td>{{ enriched.name_match.person_name }}</td>
+    <td>{{ enriched.name_match.person_id }}</td>
+    <td>{{ enriched.name_match.match_backend }}</td>
+    <td>{{ enriched.name_match.confidence|default:"N/A" }}</td>
+</tr>
+<tr>
+    <th><strong>Division</strong></th>
+    <td>{{ scraped.raw_division }}</td>
+    <td>{{ enriched.division_match.division_name }}</td>
+    <td>{{ enriched.division_match.division_id }}</td>
+    <td>{{ enriched.division_match.match_backend }}</td>
+    <td>{{ enriched.division_match.confidence|default:"N/A" }}</td>
+</tr>
+<tr>
+    <th><strong>Party</strong></th>
+    <td>{{ scraped.raw_party }}</td>
+    <td>{{ enriched.party_match.party_name }}</td>
+    <td>{{ enriched.party_match.party_id }}</td>
+    <td>{{ enriched.party_match.match_backend }}</td>
+    <td>{{ enriched.party_match.confidence|default:"N/A" }}</td>
+</tr>
+</tbody>
+</table>

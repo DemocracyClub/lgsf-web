@@ -63,11 +63,13 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "modelsearch",
+    "django_filters",
 ]
 
 PROJECT_APPS = [
     "core",
     "embeddings",
+    "councillors",
 ]
 
 INSTALLED_APPS += PROJECT_APPS
@@ -211,3 +213,7 @@ if sentry_dsn := os.environ.get("SENTRY_DSN"):
         ],
         environment=DC_ENVIRONMENT,
     )
+
+# Github Settings
+GITHUB_API_TOKEN = os.environ.get("GITHUB_API_TOKEN")
+GITHUB_ORGANISATION = "LGSF-Data"

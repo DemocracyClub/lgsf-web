@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Council summaries</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+    <h1>Council summaries</h1>
+    <h2>All councils</h2>
+    <p>
+      {{ total }} scraped councillors, {{ no_enriched }} without an enriched record
+      (these count as incomplete for every field).
+    </p>
+    {% include "councillors/includes/summary_stats_table.html" %}
+    <h2>By council</h2>
+    <table>
+      <p>You can sort the councils by clicking the column headers:</p>
+      <thead>
+        <tr>
+          <th><a href="?sort={{ sort_params.name }}">Council</a></th>
+          <th><a href="?sort={{ sort_params.total }}">Councillors</a></th>
+          <th><a href="?sort={{ sort_params.division_match }}">% Divisions Matched</a></th>
+          <th><a href="?sort={{ sort_params.party_match }}">% Parties Matched</a></th>
+          <th><a href="?sort={{ sort_params.name_match }}">% Names Matched</a></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for council in councils %}
+          <tr>
+            <td><a href="{% url 'councillors:summary_detail' council.code %}">{{ council.name }} ({{ council.code }})</a></td>
+            <td>{{ council.total }}</td>
+            <td>{{ council.division_match|floatformat:1 }}%</td>
+            <td>{{ council.party_match|floatformat:1 }}%</td>
+            <td>{{ council.name_match|floatformat:1 }}%</td>
+          </tr>
+        {% empty %}
+          <tr><td colspan="5">No councils found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </main>
+</body>
+</html>

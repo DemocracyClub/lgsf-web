@@ -24,6 +24,7 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     path("", core_views.hello_world, name="index"),
     path("decisions/", include("core.urls")),
+    path("councillors/", include("councillors.urls")),
 ]
 
 if "debug_toolbar" in settings.INSTALLED_APPS:

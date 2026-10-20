@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Summary: {{ council.name }}</title>
+  <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+  <main class="container">
+    <p><a href="{% url 'councillors:summary_list' %}">&laquo; All councils</a></p>
+    <h1>Summary: {{ council.name }} ({{ council.code }})</h1>
+    <p>
+      {{ total }} scraped councillors, {{ no_enriched }} without an enriched record
+      (these count as incomplete for every field).
+    </p>
+    <ul>
+      <li><a href="{% url 'councillors:scraped_list' %}?council={{ council_id|urlencode }}">View Scraped councillors</a></li>
+      <li><a href="{% url 'councillors:enriched_list' %}?base_councillor__council={{ council_id|urlencode }}">View Enriched councillors</a></li>
+    </ul>
+    {% include "councillors/includes/summary_stats_table.html" %}
+  </main>
+</body>
+</html>
