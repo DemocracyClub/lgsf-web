@@ -14,11 +14,17 @@
       (these count as incomplete for every field).
     </p>
     {% include "councillors/includes/summary_stats_table.html" %}
-
     <h2>By council</h2>
     <table>
+      <p>You can sort the councils by clicking the column headers:</p>
       <thead>
-        <tr><th>Council</th><th>Councillors</th><th>% Divisions Matched</th><th>% Parties Matched</th><th>% Names Matched</th></tr>
+        <tr>
+          <th><a href="?sort={{ sort_params.name }}">Council</a></th>
+          <th><a href="?sort={{ sort_params.total }}">Councillors</a></th>
+          <th><a href="?sort={{ sort_params.division_match }}">% Divisions Matched</a></th>
+          <th><a href="?sort={{ sort_params.party_match }}">% Parties Matched</a></th>
+          <th><a href="?sort={{ sort_params.name_match }}">% Names Matched</a></th>
+        </tr>
       </thead>
       <tbody>
         {% for council in councils %}
@@ -30,7 +36,7 @@
             <td>{{ council.name_match|floatformat:1 }}%</td>
           </tr>
         {% empty %}
-          <tr><td colspan="2">No councils found.</td></tr>
+          <tr><td colspan="5">No councils found.</td></tr>
         {% endfor %}
       </tbody>
     </table>

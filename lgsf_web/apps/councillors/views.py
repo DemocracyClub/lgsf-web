@@ -117,10 +117,8 @@ class CouncilSummaryListView(ListView):
     context_object_name = "councils"
 
     def get_queryset(self):
-        qs = (
-            Council.objects.filter(scraped_councillors__isnull=False)
-            .annotate(total=Count("scraped_councillors"))
-            .order_by("code")
+        qs = Council.objects.filter(scraped_councillors__isnull=False).annotate(
+            total=Count("scraped_councillors")
         )
         for key in MATCH_LABELS:
             qs = qs.annotate(
@@ -130,14 +128,41 @@ class CouncilSummaryListView(ListView):
                     / Cast(F("total"), FloatField())
                 }
             )
-        return qs
+
+        sort = self.request.GET.get("sort", "code")
+        field = sort.removeprefix("-")
+        if field not in self.sortable_fields:
+            sort, field = "code", "code"
+        self.sort = sort
+        return qs.order_by(sort, "code")
+
+    @property
+    def sortable_fields(self):
+        return {"code", "name", "total", *MATCH_LABELS}
+
+    def sort_param(self, field):
+        # Clicking the active column toggles direction; others start ascending
+        # (percentages start descending, since highest first is more useful).
+        if self.sort.removeprefix("-") == field:
+            return field if self.sort.startswith("-") else f"-{field}"
+        return (
+            f"-{field}" if field in MATCH_LABELS or field == "total" else field
+        )
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         total, no_enriched, stats = summary_stats(
             ScrapedCouncillor.objects.all()
         )
-        context.update(total=total, no_enriched=no_enriched, stats=stats)
+        context.update(
+            total=total,
+            no_enriched=no_enriched,
+            stats=stats,
+            sort=self.sort,
+            sort_params={
+                field: self.sort_param(field) for field in self.sortable_fields
+            },
+        )
         return context
 
 
