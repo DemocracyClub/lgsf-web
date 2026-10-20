@@ -45,7 +45,7 @@
   <div class="pagination">
     <span class="step-links">
       {% if page_obj.has_previous %}
-          <a href="?page=1">&laquo; first</a>
+          <a href="?page=1&{{ filter_params }}">&laquo; first</a>
           <a href="?page={{ page_obj.previous_page_number }}&{{ filter_params }}">previous</a>
       {% endif %}
 

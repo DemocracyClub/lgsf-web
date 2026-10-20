@@ -19,11 +19,15 @@ class ScrapedCouncillorListView(FilterView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        params = self.get_filter_params()
+        context["filter_params"] = params
+        return context
+
+    def get_filter_params(self):
         params = self.request.GET.copy()
         if "page" in params:
             del params["page"]
-        context["filter_params"] = params.urlencode()
-        return context
+        return params.urlencode()
 
 
 class ScrapedCouncillorDetailView(DetailView):
@@ -41,6 +45,18 @@ class EnrichedCouncillorListView(FilterView):
     filterset_fields = ["base_councillor__council"]  # noqa: RUF012
     paginate_by = 100
     template_name = "councillors/enrichedcouncillor_list.html"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        params = self.get_filter_params()
+        context["filter_params"] = params
+        return context
+
+    def get_filter_params(self):
+        params = self.request.GET.copy()
+        if "page" in params:
+            del params["page"]
+        return params.urlencode()
 
 
 class EnrichedCouncillorDetailView(DetailView):
@@ -63,6 +79,18 @@ class CompareListView(FilterView):
     filterset_class = CompareFilterSet
     paginate_by = 100
     template_name = "councillors/compare_list.html"
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data(**kwargs)
+        params = self.get_filter_params()
+        context["filter_params"] = params
+        return context
+
+    def get_filter_params(self):
+        params = self.request.GET.copy()
+        if "page" in params:
+            del params["page"]
+        return params.urlencode()
 
 
 class CompareDetailView(DetailView):
