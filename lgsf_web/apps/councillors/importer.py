@@ -36,19 +36,20 @@ class GithubCouncillorImporter:
 
     def import_council(
         self,
-        council_id: str,
+        council: str,
         use_git_clone: bool = True,
     ):
         """
         Import councillors for the specified council.
 
         Args:
+            council: The council for which to import councillors
             use_git_clone: Whether to use git clone to download the repository
 
         Raises:
             GithubCouncillorImportError: If there are issues with importing councillors
         """
-        repo_name = f"{council_id.upper()}"
+        repo_name = f"{council.code.upper()}"
 
         if not self.gh_client.repo_exists(repo_name):
             raise GithubCouncillorImportError(
@@ -79,7 +80,7 @@ class GithubCouncillorImporter:
             councillors_to_save = []
             for json_data in councillor_json_data:
                 councillor = ScrapedCouncillor(
-                    council_id=council_id,
+                    council=council,
                     photo_url=json_data.get("photo_url") or "",
                     raw_division=json_data.get("raw_division") or "",
                     raw_email=json_data.get("email") or "",

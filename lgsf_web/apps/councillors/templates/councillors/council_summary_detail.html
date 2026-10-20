@@ -14,8 +14,8 @@
       (these count as incomplete for every field).
     </p>
     <ul>
-      <li><a href="{% url 'councillors:scraped_list' %}?council_id={{ council_id|urlencode }}">View Scraped councillors</a></li>
-      <li><a href="{% url 'councillors:enriched_list' %}?base_councillor__council_id={{ council_id|urlencode }}">View Enriched councillors</a></li>
+      <li><a href="{% url 'councillors:scraped_list' %}?council={{ council_id|urlencode }}">View Scraped councillors</a></li>
+      <li><a href="{% url 'councillors:enriched_list' %}?base_councillor__council={{ council_id|urlencode }}">View Enriched councillors</a></li>
     </ul>
     {% include "councillors/includes/summary_stats_table.html" %}
   </main>

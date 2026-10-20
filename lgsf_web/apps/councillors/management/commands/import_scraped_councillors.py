@@ -1,5 +1,5 @@
 # from councillors.models import ScrapedCouncillor
-from councillors.constants import ALL_COUNCILS
+from core.models import Council
 from councillors.importer import (
     GithubCouncillorImporter,
     GithubCouncillorImportError,
@@ -23,9 +23,8 @@ class Command(BaseCommand):
             help="Sync all councils",
         )
 
-    def get_council_ids(self):
-        # TODO: get council IDs from source synced to EE
-        return ALL_COUNCILS
+    def get_councils(self):
+        return Council.objects.all()
 
     def handle(self, *args, **options):
         self.options = options
@@ -34,13 +33,13 @@ class Command(BaseCommand):
             importer = GithubCouncillorImporter(stdout=self.stdout)
             if options["council_id"]:
                 importer.import_council(
-                    council_id=options["council_id"],
+                    council=options["council_id"],
                     use_git_clone=True,
                 )
             else:
-                for council_id in self.get_council_ids():
+                for council in self.get_councils():
                     importer.import_council(
-                        council_id=council_id,
+                        council=council,
                         use_git_clone=True,
                     )
         except GithubCouncillorImportError as e:

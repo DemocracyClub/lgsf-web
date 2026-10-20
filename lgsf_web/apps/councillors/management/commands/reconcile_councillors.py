@@ -1,4 +1,4 @@
-from councillors.constants import ALL_COUNCILS
+from core.models import Council
 from councillors.matchers import (
     CouncillorDivisionMatcher,
     CouncillorNameMatcher,
@@ -41,8 +41,7 @@ class Command(BaseCommand):
         )
 
     def get_council_ids(self):
-        # TODO: get council IDs from source synced to EE
-        return ALL_COUNCILS
+        return Council.objects.all()
 
     def handle(self, *args, **options):
         req_opts = ["divisions", "parties", "names"]
@@ -52,27 +51,27 @@ class Command(BaseCommand):
             )
             return
         if options["council_id"]:
-            council_id = options["council_id"]
-            matchers = self.get_matchers_for_council(council_id, options)
-            reconciler = CouncillorReconciler(council_id, matchers)
+            council = Council.objects.get(code=options["council_id"])
+            matchers = self.get_matchers_for_council(council, options)
+            reconciler = CouncillorReconciler(council, matchers)
             reconciler.reconcile()
         else:
-            for council_id in self.get_council_ids():
-                matchers = self.get_matchers_for_council(council_id, options)
-                reconciler = CouncillorReconciler(council_id, matchers)
+            for council in self.get_council_ids():
+                matchers = self.get_matchers_for_council(council, options)
+                reconciler = CouncillorReconciler(council, matchers)
                 reconciler.reconcile()
 
     def get_matchers_for_council(
-        self, council_id, options
+        self, council, options
     ) -> list[type[BaseMatcher]]:
         matchers = []
         if options["divisions"]:
-            div_matcher = CouncillorDivisionMatcher(council_id)
+            div_matcher = CouncillorDivisionMatcher(council)
             matchers.append(div_matcher)
         if options["parties"]:
-            party_matcher = CouncillorPartyMatcher(council_id)
+            party_matcher = CouncillorPartyMatcher(council)
             matchers.append(party_matcher)
         if options["names"]:
-            name_matcher = CouncillorNameMatcher(council_id)
+            name_matcher = CouncillorNameMatcher(council)
             matchers.append(name_matcher)
         return matchers

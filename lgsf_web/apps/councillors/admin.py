@@ -9,7 +9,7 @@ class ScrapedCouncillorAdmin(admin.ModelAdmin):
         "raw_identifier",
         "raw_name",
     )
-    list_filter = ("council_id",)
+    list_filter = ("council",)
 
 
 class EnrichedCouncillorAdmin(admin.ModelAdmin):
@@ -22,7 +22,7 @@ class EnrichedCouncillorAdmin(admin.ModelAdmin):
         "ynr_id",
         "ynr_name",
     )
-    list_filter = ("base_councillor__council_id",)
+    list_filter = ("base_councillor__council",)
 
     def council_id(self, obj):
         return obj.base_councillor.council_id

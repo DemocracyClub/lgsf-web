@@ -44,7 +44,7 @@ def backend_filter(model, relation, label):
 
 class CompareFilterSet(filters.FilterSet):
     council_id = filters.CharFilter(
-        field_name="base_councillor__council_id",
+        field_name="base_councillor__council__code",
         label="Council ID",
         lookup_expr="iexact",
     )

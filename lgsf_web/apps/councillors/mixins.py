@@ -5,15 +5,6 @@ from councillors.models import ScrapedCouncillor
 
 
 class CouncilMixin:
-    def get_council_official_name(self) -> str:
-        with open(DATA_DIR / "councils.csv") as f:
-            reader = csv.DictReader(f)
-            councils = {
-                row["official_identifier"]: row["official_name"]
-                for row in reader
-            }
-            return councils.get(self.council_id)
-
     def get_scraped_councillors(
         self,
         council_id: str,

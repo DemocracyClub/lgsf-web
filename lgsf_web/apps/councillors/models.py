@@ -2,7 +2,11 @@ from django.db import models
 
 
 class ScrapedCouncillor(models.Model):
-    council_id = models.CharField(max_length=5)
+    council = models.ForeignKey(
+        "core.Council",
+        on_delete=models.PROTECT,
+        related_name="scraped_councillors",
+    )
     photo_url = models.CharField(max_length=255)
     raw_division = models.CharField(max_length=255)
     raw_email = models.CharField(max_length=255)

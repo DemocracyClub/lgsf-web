@@ -20,7 +20,6 @@ class BaseCouncillorMatcher(CouncilMixin, metaclass=abc.ABCMeta):
     def __init__(self, council_id):
         self.matcher = None
         self.council_id = council_id
-        self.council_official_name = self.get_council_official_name()
 
     @property
     def matcher_type(self):
@@ -192,7 +191,7 @@ class CouncillorDivisionMatcher(BaseCouncillorMatcher):
         ]
 
     def get_targets(self):
-        council_div_rows = self.get_council_divisions(self.council_id)
+        council_div_rows = self.get_council_divisions(self.council_id.code)
         return self.get_target_divisions_from_csv_rows(council_div_rows)
 
     def get_inputs(self):
@@ -250,7 +249,7 @@ class CouncillorNameMatcher(BaseCouncillorMatcher):
 
     def get_target_names_from_csv(self, csv_file) -> list[Target]:
         reader = csv.DictReader(csv_file)
-        council_name = self.get_council_official_name()
+        council_name = self.council_id.name
         return [
             Target(row["person_id"], row["person_name"])
             for row in reader
