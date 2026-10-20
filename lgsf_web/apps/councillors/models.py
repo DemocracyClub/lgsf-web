@@ -15,7 +15,7 @@ class ScrapedCouncillor(models.Model):
         return f"{self.council_id}-{self.raw_identifier}-{self.raw_name}"
 
     class Meta:
-        constraints = [
+        constraints = [  # noqa: RUF012
             models.UniqueConstraint(
                 fields=["raw_identifier", "raw_name"],
                 name="unique_raw_identifier_raw_name",

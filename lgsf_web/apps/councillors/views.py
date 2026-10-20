@@ -12,7 +12,7 @@ from django_filters.views import FilterView
 class ScrapedCouncillorListView(FilterView):
     model = ScrapedCouncillor
     queryset = ScrapedCouncillor.objects.select_related("enriched")
-    filterset_fields = ["council_id"]
+    filterset_fields = ["council_id"]  # noqa: RUF012
     paginate_by = 100
     template_name = "councillors/scrapedcouncillor_list.html"
 
@@ -37,7 +37,7 @@ class EnrichedCouncillorListView(FilterView):
         "party_match",
         "name_match",
     )
-    filterset_fields = ["base_councillor__council_id"]
+    filterset_fields = ["base_councillor__council_id"]  # noqa: RUF012
     paginate_by = 100
     template_name = "councillors/enrichedcouncillor_list.html"
 

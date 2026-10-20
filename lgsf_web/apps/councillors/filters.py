@@ -96,4 +96,4 @@ class CompareFilterSet(filters.FilterSet):
 
     class Meta:
         model = EnrichedCouncillor
-        fields = []
+        fields = []  # noqa: RUF012
