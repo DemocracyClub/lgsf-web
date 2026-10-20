@@ -1,7 +1,12 @@
 import django_filters as filters
-from councillors.models import EnrichedCouncillor
+from councillors.models import (
+    EEDivisionMatch,
+    EnrichedCouncillor,
+    YNRNameMatch,
+    YNRPartyMatch,
+)
 from django.core.validators import EMPTY_VALUES
-from django.forms import RadioSelect
+from django.forms import CheckboxSelectMultiple, RadioSelect
 
 
 class EmptyStringFilter(filters.BooleanFilter):
@@ -13,6 +18,28 @@ class EmptyStringFilter(filters.BooleanFilter):
         method = qs.exclude if exclude else qs.filter
 
         return method(**{self.field_name: ""})
+
+
+def backend_choices(model):
+    def choices():
+        backends = (
+            model.objects.exclude(match_backend="")
+            .order_by("match_backend")
+            .values_list("match_backend", flat=True)
+            .distinct()
+        )
+        return [(b, b) for b in backends]
+
+    return choices
+
+
+def backend_filter(model, relation, label):
+    return filters.MultipleChoiceFilter(
+        field_name=f"{relation}__match_backend",
+        label=label,
+        choices=backend_choices(model),
+        widget=CheckboxSelectMultiple,
+    )
 
 
 class CompareFilterSet(filters.FilterSet):
@@ -56,6 +83,15 @@ class CompareFilterSet(filters.FilterSet):
                 ("unknown", "Unknown"),
             ),
         ),
+    )
+    division_backend = backend_filter(
+        EEDivisionMatch, "division_match", "EE Division match backend"
+    )
+    party_backend = backend_filter(
+        YNRPartyMatch, "party_match", "Party match backend"
+    )
+    name_backend = backend_filter(
+        YNRNameMatch, "name_match", "Name match backend"
     )
 
     class Meta:

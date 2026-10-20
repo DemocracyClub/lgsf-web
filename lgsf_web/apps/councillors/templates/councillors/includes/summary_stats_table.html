@@ -1,12 +1,26 @@
 <table>
   <thead>
-    <tr><th>Fields</th><th>Matched</th><th>% of councillors</th><th>Missing</th></tr>
+    <tr><th>Fields</th><th>Matched</th><th>Match backends</th><th>% of councillors</th><th>Missing</th></tr>
   </thead>
   <tbody>
     {% for stat in stats %}
       <tr>
         <td>{{ stat.label }}</td>
         <td>{{ stat.complete }} / {{ total }}</td>
+        <td>
+          <ul>
+            {% for b in stat.backends %}
+              <li>
+                {% if b.backend %}
+                  <a href="{% url 'councillors:compare_list' %}?{% if council_id %}council_id={{ council_id|urlencode }}&{% endif %}{{ stat.backend_param }}={{ b.backend|urlencode }}">{{ b.backend }}</a>
+                {% else %}
+                  (none)
+                {% endif %}
+                : {{ b.count }}
+              </li>
+            {% endfor %}
+          </ul>
+        </td>
         <td>{{ stat.percent }}%</td>
         <td><a href="{% url 'councillors:compare_list' %}?{% if council_id %}council_id={{ council_id|urlencode }}&{% endif %}{{ stat.filter_param }}=true">View missing</a></td>
       </tr>

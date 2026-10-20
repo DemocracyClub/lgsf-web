@@ -11,6 +11,7 @@
     <form method="get">
       {{ filter.form.as_p }}
       <input type="submit" />
+      <a href="{% url 'councillors:compare_list' %}" role="button" class="secondary">Clear filters</a>
     </form>
       <div class="pagination">
         Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ paginator.count }}

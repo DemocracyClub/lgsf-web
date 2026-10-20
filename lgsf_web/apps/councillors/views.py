@@ -2,7 +2,7 @@ from typing import Any
 
 from councillors.filters import CompareFilterSet
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
-from django.db.models import Count, Q, Value
+from django.db.models import Count, F, Q, Value
 from django.db.models.functions import NullIf
 from django.http import Http404
 from django.views.generic import DetailView, ListView, TemplateView
@@ -95,7 +95,14 @@ def summary_stats(qs):
     stats = [
         {
             "label": label,
+            "backends": list(
+                qs.filter(**{f"enriched__{key}__isnull": False})
+                .order_by(f"enriched__{key}__match_backend")
+                .values(backend=F(f"enriched__{key}__match_backend"))
+                .annotate(count=Count("id"))
+            ),
             "filter_param": key,
+            "backend_param": key.replace("_match", "_backend"),
             "complete": counts[key],
             "percent": round(100 * counts[key] / total, 1) if total else 0,
         }
