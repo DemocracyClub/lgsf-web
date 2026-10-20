@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Summary: {{ council_id }}</title>
+  <title>Summary: {{ council.name }}</title>
   <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
 </head>
 <body>
   <main class="container">
     <p><a href="{% url 'councillors:summary_list' %}">&laquo; All councils</a></p>
-    <h1>Summary: {{ council_id }}</h1>
+    <h1>Summary: {{ council.name }} ({{ council.code }})</h1>
     <p>
       {{ total }} scraped councillors, {{ no_enriched }} without an enriched record
       (these count as incomplete for every field).

@@ -1,10 +1,11 @@
 from typing import Any
 
+from core.models import Council
 from councillors.filters import CompareFilterSet
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
-from django.db.models import Count, F, Q, Value
-from django.db.models.functions import NullIf
-from django.http import Http404
+from django.db.models import Count, F, FloatField, Q, Value
+from django.db.models.functions import Cast, NullIf
+from django.shortcuts import get_object_or_404
 from django.views.generic import DetailView, ListView, TemplateView
 from django_filters.views import FilterView
 
@@ -116,11 +117,20 @@ class CouncilSummaryListView(ListView):
     context_object_name = "councils"
 
     def get_queryset(self):
-        return (
-            ScrapedCouncillor.objects.order_by("council_id")
-            .values("council_id")
-            .annotate(total=Count("id"))
+        qs = (
+            Council.objects.filter(scraped_councillors__isnull=False)
+            .annotate(total=Count("scraped_councillors"))
+            .order_by("code")
         )
+        for key in MATCH_LABELS:
+            qs = qs.annotate(
+                **{
+                    key: 100
+                    * Count(f"scraped_councillors__enriched__{key}")
+                    / Cast(F("total"), FloatField())
+                }
+            )
+        return qs
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
@@ -136,13 +146,13 @@ class CouncilSummaryDetailView(TemplateView):
 
     def get_context_data(self, council_id, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
+        council = get_object_or_404(Council, code=council_id)
         total, no_enriched, stats = summary_stats(
-            ScrapedCouncillor.objects.filter(council_id=council_id)
+            ScrapedCouncillor.objects.filter(council=council)
         )
-        if not total:
-            raise Http404("No councillors for this council")
         context.update(
-            council_id=council_id,
+            council=council,
+            council_id=council.code,
             total=total,
             no_enriched=no_enriched,
             stats=stats,

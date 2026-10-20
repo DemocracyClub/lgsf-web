@@ -18,13 +18,16 @@
     <h2>By council</h2>
     <table>
       <thead>
-        <tr><th>Council ID</th><th>Councillors</th></tr>
+        <tr><th>Council</th><th>Councillors</th><th>% Divisions Matched</th><th>% Parties Matched</th><th>% Names Matched</th></tr>
       </thead>
       <tbody>
         {% for council in councils %}
           <tr>
-            <td><a href="{% url 'councillors:summary_detail' council.council_id %}">{{ council.council_id }}</a></td>
+            <td><a href="{% url 'councillors:summary_detail' council.code %}">{{ council.name }} ({{ council.code }})</a></td>
             <td>{{ council.total }}</td>
+            <td>{{ council.division_match|floatformat:1 }}%</td>
+            <td>{{ council.party_match|floatformat:1 }}%</td>
+            <td>{{ council.name_match|floatformat:1 }}%</td>
           </tr>
         {% empty %}
           <tr><td colspan="2">No councils found.</td></tr>
