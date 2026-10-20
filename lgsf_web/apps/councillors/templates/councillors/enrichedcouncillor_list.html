@@ -32,9 +32,9 @@
           <tr>
             <td>{{ councillor.base_councillor.council_id }}</td>
             <td><a href="{% url 'councillors:enriched_detail' councillor.pk %}">{{ councillor.base_councillor.raw_name }}</a></td>
-            <td>{{ councillor.ynr_name }}</td>
-            <td>{{ councillor.ee_division_name }}</td>
-            <td>{{ councillor.ynr_party_id }}</td>
+            <td>{{ councillor.ynr_match }}</td>
+            <td>{{ councillor.division_match }}</td>
+            <td>{{ councillor.party_match }}</td>
             <td><a href="{% url 'councillors:compare_detail' councillor.base_councillor.pk %}">Compare</a></td>
           </tr>
         {% empty %}

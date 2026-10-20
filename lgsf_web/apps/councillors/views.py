@@ -31,7 +31,12 @@ class ScrapedCouncillorDetailView(DetailView):
 
 class EnrichedCouncillorListView(FilterView):
     model = EnrichedCouncillor
-    queryset = EnrichedCouncillor.objects.select_related("base_councillor")
+    queryset = EnrichedCouncillor.objects.select_related(
+        "base_councillor",
+        "division_match",
+        "party_match",
+        "name_match",
+    )
     filterset_fields = ["base_councillor__council_id"]
     paginate_by = 100
     template_name = "councillors/enrichedcouncillor_list.html"
@@ -45,10 +50,13 @@ class EnrichedCouncillorDetailView(DetailView):
 class CompareListView(FilterView):
     model = EnrichedCouncillor
     queryset = EnrichedCouncillor.objects.select_related(
-        "base_councillor"
+        "base_councillor",
+        "division_match",
+        "party_match",
+        "name_match",
     ).order_by(
         "base_councillor__council_id",
-        NullIf("ynr_name", Value("")).asc(nulls_last=True),
+        NullIf("name_match__person_name", Value("")).asc(nulls_last=True),
         "base_councillor__raw_name",
     )
     filterset_class = CompareFilterSet
@@ -65,26 +73,14 @@ class CompareDetailView(DetailView):
     template_name = "councillors/compare_detail.html"
 
 
-# A group of fields counts as missing if the councillor has no enriched
-# record, or any field in the group is empty.
-MISSING_GROUPS = {
-    "division": (
-        "EE division ID / name",
-        Q(enriched__ee_division_id__isnull=True) | Q(enriched__ee_division_name=""),
-    ),
-    "party": (
-        "YNR party ID / name",
-        Q(enriched__ynr_party_id="") | Q(enriched__ynr_party_name=""),
-    ),
-    "ynr": ("YNR name / ID", Q(enriched__ynr_id__isnull=True) | Q(enriched__ynr_name="")),
+# A councillor is missing a match if it has no match object for it, which
+# includes having no enriched record at all.
+# Match relation on EnrichedCouncillor -> label; also the compare filter param.
+MATCH_LABELS = {
+    "division_match": "EE division",
+    "party_match": "YNR party",
+    "name_match": "YNR name",
 }
-
-
-FILTER_PARAMS = {"ynr": "ynr_name", "division": "ee_division_id", "party": "ynr_party_id"}
-
-
-def _missing_q(key):
-    return Q(enriched__isnull=True) | MISSING_GROUPS[key][1]
 
 
 def summary_stats(qs):
@@ -92,18 +88,18 @@ def summary_stats(qs):
         "total": Count("id"),
         "no_enriched": Count("id", filter=Q(enriched__isnull=True)),
     }
-    for key in MISSING_GROUPS:
-        aggregates[key] = Count("id", filter=_missing_q(key))
+    for key in MATCH_LABELS:
+        aggregates[key] = Count(f"enriched__{key}")
     counts = qs.aggregate(**aggregates)
     total = counts["total"]
     stats = [
         {
             "label": label,
-            "filter_param": FILTER_PARAMS[key],
-            "complete": total - counts[key],
-            "percent": round(100 * (total - counts[key]) / total, 1) if total else 0,
+            "filter_param": key,
+            "complete": counts[key],
+            "percent": round(100 * counts[key] / total, 1) if total else 0,
         }
-        for key, (label, _) in MISSING_GROUPS.items()
+        for key, label in MATCH_LABELS.items()
     ]
     return total, counts["no_enriched"], stats
 
@@ -121,7 +117,9 @@ class CouncilSummaryListView(ListView):
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        total, no_enriched, stats = summary_stats(ScrapedCouncillor.objects.all())
+        total, no_enriched, stats = summary_stats(
+            ScrapedCouncillor.objects.all()
+        )
         context.update(total=total, no_enriched=no_enriched, stats=stats)
         return context
 
@@ -137,7 +135,10 @@ class CouncilSummaryDetailView(TemplateView):
         if not total:
             raise Http404("No councillors for this council")
         context.update(
-            council_id=council_id, total=total, no_enriched=no_enriched, stats=stats
+            council_id=council_id,
+            total=total,
+            no_enriched=no_enriched,
+            stats=stats,
         )
         return context
 

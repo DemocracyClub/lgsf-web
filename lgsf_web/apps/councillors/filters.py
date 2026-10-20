@@ -21,9 +21,10 @@ class CompareFilterSet(filters.FilterSet):
         label="Council ID",
         lookup_expr="iexact",
     )
-    ynr_name = EmptyStringFilter(
-        field_name="ynr_name",
+    name_match = filters.BooleanFilter(
+        field_name="name_match",
         label="Missing Name?",
+        lookup_expr="isnull",
         widget=RadioSelect(
             choices=(
                 ("true", "Yes"),
@@ -32,8 +33,8 @@ class CompareFilterSet(filters.FilterSet):
             ),
         ),
     )
-    ee_division_id = filters.BooleanFilter(
-        field_name="ee_division_id",
+    division_match = filters.BooleanFilter(
+        field_name="division_match",
         label="Missing EE Division?",
         lookup_expr="isnull",
         widget=RadioSelect(
@@ -44,9 +45,10 @@ class CompareFilterSet(filters.FilterSet):
             ),
         ),
     )
-    ynr_party_id = EmptyStringFilter(
-        field_name="ynr_party_id",
+    party_match = filters.BooleanFilter(
+        field_name="party_match",
         label="Missing Party?",
+        lookup_expr="isnull",
         widget=RadioSelect(
             choices=(
                 ("true", "Yes"),
