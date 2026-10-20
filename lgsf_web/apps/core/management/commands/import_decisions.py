@@ -181,7 +181,7 @@ class Command(BaseCommand):
         source = data["source"]
 
         decision, _ = Decision.objects.update_or_create(
-            council=council,
+            council_id=council,
             raw_identifier=data["raw_identifier"],
             defaults={
                 "raw_title": data["raw_title"] or "",

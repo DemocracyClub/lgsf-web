@@ -1,14 +1,15 @@
-from core.models import Decision
+from core.models import Council, Decision
 from django import forms
 
 
 def council_choices():
     councils = (
-        Decision.objects.order_by("council")
-        .values_list("council", flat=True)
+        Council.objects.filter(decision__isnull=False)
+        .order_by("territory", "name")
+        .values_list("code", "name")
         .distinct()
     )
-    return [("", "All councils")] + [(council, council) for council in councils]
+    return [("", "All councils")] + list(councils)
 
 
 def status_choices():

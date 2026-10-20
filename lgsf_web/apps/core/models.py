@@ -8,8 +8,8 @@ class DecisionQuerySet(SearchableQuerySetMixin, models.QuerySet):
 
 
 class Decision(index.Indexed, models.Model):
-    # Three-letter LGSF council code, e.g. "AGY" (matches data/<CODE>/Decisions/)
-    council = models.CharField(max_length=3)
+    # Council.code (e.g. "AGY") matches data/<CODE>/Decisions/
+    council = models.ForeignKey("Council", on_delete=models.PROTECT)
     raw_identifier = models.CharField(max_length=255)
     raw_title = models.CharField(max_length=1024, blank=True)
     raw_date = models.DateField(null=True, blank=True)
@@ -77,7 +77,7 @@ class Decision(index.Indexed, models.Model):
     search_auto_update = False
 
     def __str__(self):
-        return f"{self.council}/{self.raw_identifier}: {self.raw_title}"
+        return f"{self.council_id}/{self.raw_identifier}: {self.raw_title}"
 
 
 class Document(models.Model):
@@ -111,7 +111,14 @@ class Document(models.Model):
 
     @property
     def s3_url(self):
-        return f"https://lgsf-data-archive.s3.eu-west-2.amazonaws.com/data/{self.decision.council}/Decisions/documents/{self.storage_key}"
+        return f"https://lgsf-data-archive.s3.eu-west-2.amazonaws.com/data/{self.decision.council_id}/Decisions/documents/{self.storage_key}"
 
     def __str__(self):
         return self.title or self.storage_key
+
+
+class Council(models.Model):
+    # a bad representation of a council that is definitely wrong
+    code = models.CharField(max_length=3, blank=False, primary_key=True)
+    name = models.CharField(max_length=255, blank=False)
+    territory = models.CharField(max_length=3, blank=False)
