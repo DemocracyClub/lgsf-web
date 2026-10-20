@@ -45,3 +45,9 @@ If you already have data in the db, then add `--clean --if-exists`.
 ```sh
 uv run pytest
 ```
+
+## Embedding documents
+
+`manage.py embed_documents` converts, chunks and embeds decisions'
+documents, locally or on AWS Batch. See
+[docs/embeddings.md](docs/embeddings.md).
