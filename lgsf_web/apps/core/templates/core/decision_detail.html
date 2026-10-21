@@ -11,7 +11,7 @@
     <main class="container">
         <article>
             <h1>{{ decision.raw_title }}</h2>
-            <p>{{ decision.text }}</p>
+            <p>{{ decision.text|linebreaks }}</p>
 
             <h2>Documents</h2>
             {% if decision.documents.all %}

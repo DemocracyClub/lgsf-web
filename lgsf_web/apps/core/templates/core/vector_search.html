@@ -22,7 +22,7 @@
                 {% with chunk=result.chunk decision=result.chunk.document.decision %}
                 <article>
                     <h3><a href="{% url 'core:decision-detail' decision.pk %}">{{ decision.raw_title }}</a></h3>
-                    <p>{{ chunk.text }}</p>
+                    <p>{{ chunk.text|linebreaks }}</p>
                     <footer>
                         {{ decision.council }} &middot;
                         <a href="{{ chunk.document.s3_url }}" target="_blank">{{ chunk.document }}</a>
