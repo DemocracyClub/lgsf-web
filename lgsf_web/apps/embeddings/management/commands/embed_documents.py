@@ -9,7 +9,7 @@ Usage:
     ./manage.py embed_documents MAN --since 2026-01-01
     ./manage.py embed_documents MAN --stages extract,chunk     # no AWS needed
     ./manage.py embed_documents --source s3 --limit 3
-    ./manage.py embed_documents --remote --shards 20       # on AWS Batch
+    ./manage.py embed_documents --remote                   # on AWS Batch
 
 Embedding needs AWS credentials with bedrock:InvokeModel, for example
 AWS_PROFILE=dev-lgsf-dc. Extracting and chunking need the embeddings
@@ -165,9 +165,8 @@ class Command(BaseCommand):
         parser.add_argument(
             "--shards",
             type=int,
-            default=1,
             help="With --remote, how many Batch jobs to split the tasks "
-            "between (default 1)",
+            "between (default one for each 100MB of files)",
         )
         parser.add_argument(
             "--manifest",
@@ -181,7 +180,7 @@ class Command(BaseCommand):
         self.options = options
         if options["remote"] and options["manifest"]:
             raise CommandError("--remote and --manifest can't be used together")
-        if options["shards"] < 1:
+        if options["shards"] is not None and options["shards"] < 1:
             raise CommandError("--shards must be at least 1")
         tasks = self.get_tasks()
         if options["remote"]:
@@ -230,7 +229,7 @@ class Command(BaseCommand):
         """
         options = self.options
         run_id = batch.new_run_id()
-        shards = shard(tasks, options["shards"])
+        shards = shard(tasks, options["shards"] or batch.shard_count(tasks))
         run = {
             "run_id": run_id,
             "created_at": datetime.datetime.now(datetime.UTC).isoformat(),
