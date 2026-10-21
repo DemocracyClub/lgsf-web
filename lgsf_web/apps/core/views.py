@@ -19,28 +19,9 @@ def decision_search(request):
     results = []
 
     if form.is_valid():
-        queryset = Decision.objects.all().prefetch_related("documents")
-
-        if council := form.cleaned_data["council"]:
-            queryset = queryset.filter(council=council)
-
-        if status := form.cleaned_data["status"]:
-            queryset = queryset.filter(status=status)
-
-        if date_from := form.cleaned_data["publication_date_from"]:
-            queryset = queryset.filter(publication_date__gte=date_from)
-
-        if date_to := form.cleaned_data["publication_date_to"]:
-            queryset = queryset.filter(publication_date__lte=date_to)
-
-        if form.cleaned_data["is_key_decision"]:
-            queryset = queryset.filter(is_key_decision=True)
-
-        if form.cleaned_data["is_officer_decision"]:
-            queryset = queryset.filter(is_officer_decision=True)
-
-        if form.cleaned_data["is_subject_to_call_in"]:
-            queryset = queryset.filter(is_subject_to_call_in=True)
+        queryset = form.filter_decisions(
+            Decision.objects.all().prefetch_related("documents")
+        )
 
         if query := form.cleaned_data["q"]:
             if form.cleaned_data["search_mode"] == "phrase":
@@ -83,9 +64,14 @@ def vector_search(request):
     results = []
 
     if form.is_valid():
+        decisions = form.filter_decisions(Decision.objects.all())
+
         query_embedding = embed_text(form.cleaned_data["q"])
         embeddings = (
-            Embedding.objects.filter(model=TITAN_MODEL)
+            Embedding.objects.filter(
+                model=TITAN_MODEL,
+                chunk__document__decision__in=decisions.values("pk"),
+            )
             .select_related("chunk__document__decision__council")
             .annotate(distance=CosineDistance("embedding", query_embedding))
             .order_by("distance")[:VECTOR_SEARCH_LIMIT]

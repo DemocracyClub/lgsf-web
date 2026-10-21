@@ -22,19 +22,9 @@ def status_choices():
     return [("", "All statuses")] + [(status, status) for status in statuses]
 
 
-class VectorSearchForm(forms.Form):
-    q = forms.CharField(
-        label="Search",
-        widget=forms.TextInput(attrs={"placeholder": "Search chunks…"}),
-    )
+class DecisionFilterForm(forms.Form):
+    field_order = ("q",)
 
-
-class DecisionSearchForm(forms.Form):
-    q = forms.CharField(
-        label="Search",
-        required=False,
-        widget=forms.TextInput(attrs={"placeholder": "Search decisions…"}),
-    )
     council = forms.ChoiceField(
         label="Council",
         required=False,
@@ -69,9 +59,48 @@ class DecisionSearchForm(forms.Form):
         label="Subject to call-in only",
         required=False,
     )
+
+    def filter_decisions(self, queryset):
+        data = self.cleaned_data
+
+        if council := data["council"]:
+            queryset = queryset.filter(council=council)
+
+        if status := data["status"]:
+            queryset = queryset.filter(status=status)
+
+        if date_from := data["publication_date_from"]:
+            queryset = queryset.filter(publication_date__gte=date_from)
+
+        if date_to := data["publication_date_to"]:
+            queryset = queryset.filter(publication_date__lte=date_to)
+
+        if data["is_key_decision"]:
+            queryset = queryset.filter(is_key_decision=True)
+
+        if data["is_officer_decision"]:
+            queryset = queryset.filter(is_officer_decision=True)
+
+        if data["is_subject_to_call_in"]:
+            queryset = queryset.filter(is_subject_to_call_in=True)
+
+        return queryset
+
+
+class VectorSearchForm(DecisionFilterForm):
+    q = forms.CharField(
+        label="Search",
+        widget=forms.TextInput(attrs={"placeholder": "Search chunks…"}),
+    )
+
+
+class DecisionSearchForm(DecisionFilterForm):
+    q = forms.CharField(
+        label="Search",
+        widget=forms.TextInput(attrs={"placeholder": "Search decisions…"}),
+    )
     search_mode = forms.ChoiceField(
         label="Search mode",
-        required=False,
         choices=[
             ("simple", "Simple search"),
             ("phrase", "Exact phrase"),
