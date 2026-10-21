@@ -60,29 +60,37 @@ class DecisionFilterForm(forms.Form):
         required=False,
     )
 
-    def filter_decisions(self, queryset):
+    def filter_decisions(self, queryset, prefix=""):
+        # prefix lets the same filters apply to models related to Decision,
+        # e.g. "document__decision__" for Chunk
         data = self.cleaned_data
 
         if council := data["council"]:
-            queryset = queryset.filter(council=council)
+            queryset = queryset.filter(**{f"{prefix}council": council})
 
         if status := data["status"]:
-            queryset = queryset.filter(status=status)
+            queryset = queryset.filter(**{f"{prefix}status": status})
 
         if date_from := data["publication_date_from"]:
-            queryset = queryset.filter(publication_date__gte=date_from)
+            queryset = queryset.filter(
+                **{f"{prefix}publication_date__gte": date_from}
+            )
 
         if date_to := data["publication_date_to"]:
-            queryset = queryset.filter(publication_date__lte=date_to)
+            queryset = queryset.filter(
+                **{f"{prefix}publication_date__lte": date_to}
+            )
 
         if data["is_key_decision"]:
-            queryset = queryset.filter(is_key_decision=True)
+            queryset = queryset.filter(**{f"{prefix}is_key_decision": True})
 
         if data["is_officer_decision"]:
-            queryset = queryset.filter(is_officer_decision=True)
+            queryset = queryset.filter(**{f"{prefix}is_officer_decision": True})
 
         if data["is_subject_to_call_in"]:
-            queryset = queryset.filter(is_subject_to_call_in=True)
+            queryset = queryset.filter(
+                **{f"{prefix}is_subject_to_call_in": True}
+            )
 
         return queryset
 

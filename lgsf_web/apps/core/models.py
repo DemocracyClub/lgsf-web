@@ -9,6 +9,10 @@ class DecisionQuerySet(SearchableQuerySetMixin, models.QuerySet):
     pass
 
 
+class ChunkQuerySet(SearchableQuerySetMixin, models.QuerySet):
+    pass
+
+
 class Decision(index.Indexed, models.Model):
     # Council.code (e.g. "AGY") matches data/<CODE>/Decisions/
     council = models.ForeignKey("Council", on_delete=models.PROTECT)
@@ -63,7 +67,6 @@ class Decision(index.Indexed, models.Model):
             "documents",
             [
                 index.SearchField("title", boost=2),
-                index.SearchField("text"),
             ],
         ),
     )
@@ -101,6 +104,7 @@ class Document(models.Model):
     storage_backend = models.CharField(max_length=255, blank=True)
     storage_key = models.CharField(max_length=1024, blank=True)
 
+    # TODO: probably delete
     text = models.TextField(blank=True)
 
     class Meta:
@@ -119,7 +123,7 @@ class Document(models.Model):
         return self.title or self.storage_key
 
 
-class Chunk(models.Model):
+class Chunk(index.Indexed, models.Model):
     document = models.ForeignKey(
         Document, related_name="chunks", on_delete=models.CASCADE
     )
@@ -139,6 +143,29 @@ class Chunk(models.Model):
     source_type = models.CharField(max_length=255)
     type = models.CharField(max_length=255)
     metadata = models.JSONField()
+
+    objects = ChunkQuerySet.as_manager()
+
+    search_fields = (
+        index.SearchField("text"),
+        # filters, mirroring Decision so decision filters can apply to chunk searches
+        index.RelatedFields(
+            "document",
+            [
+                index.RelatedFields(
+                    "decision",
+                    [
+                        index.FilterField("council"),
+                        index.FilterField("status"),
+                        index.FilterField("is_key_decision"),
+                        index.FilterField("is_officer_decision"),
+                        index.FilterField("is_subject_to_call_in"),
+                        index.FilterField("publication_date"),
+                    ],
+                ),
+            ],
+        ),
+    )
 
     class Meta:
         constraints = (

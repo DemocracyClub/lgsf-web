@@ -52,9 +52,18 @@
         </form>
 
         {% if results %}
-            <h2>{{ results.count }} Results</h2>
+            <h2>{{ results|length }} Results</h2>
             {% for result in results %}
                 {% include "core/snippets/inline_decision.html" with decision=result %}
+                {% for chunk in result.matched_chunks %}
+                    <blockquote>
+                        {{ chunk.text|truncatewords:60 }}
+                        <footer>
+                            <a href="{{ chunk.document.s3_url }}" target="_blank">{{ chunk.document }}</a>
+                            (chunk {{ chunk.chunk_index }} of {{ chunk.chunk_count }})
+                        </footer>
+                    </blockquote>
+                {% endfor %}
             {% endfor %}
         {% endif %}
     </main>
