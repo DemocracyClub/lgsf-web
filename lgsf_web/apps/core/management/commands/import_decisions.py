@@ -12,28 +12,21 @@ Usage:
 
 import json
 import logging
-import re
 from datetime import UTC, datetime
 
+from core.management.helpers import (
+    DATA_DIR,
+    VERBOSITY_TO_LOG_LEVEL,
+    clean_text,
+    parse_date,
+)
 from core.models import Decision, Document
-from django.conf import settings
 from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from pypdf import PdfReader
 
-_CONTROL_CHARS_RE = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
-
-DATA_DIR = settings.LGSF_DATA_DIR
-
-
 logger = logging.getLogger(__name__)
-
-
-def parse_date(value):
-    if not value:
-        return None
-    return datetime.strptime(value, "%Y-%m-%d").replace(tzinfo=UTC).date()
 
 
 def validate_date_arg(value):
@@ -44,12 +37,6 @@ def validate_date_arg(value):
             f"Invalid date {value!r}, expected YYYY-MM-DD"
         ) from None
     return value
-
-
-def clean_text(text):
-    # drop NUL/control bytes Postgres rejects, and lone surrogates pypdf sometimes emits
-    text = text.encode("utf-8", "surrogatepass").decode("utf-8", "ignore")
-    return _CONTROL_CHARS_RE.sub("", text)
 
 
 def get_document_text(doc, council):
@@ -87,14 +74,6 @@ def document_changed(db_doc, doc):
         and db_doc.last_modified == doc["last_modified"]
     )
     return not (etag_matches or last_modified_matches)
-
-
-VERBOSITY_TO_LOG_LEVEL = {
-    0: logging.ERROR,
-    1: logging.WARNING,
-    2: logging.INFO,
-    3: logging.DEBUG,
-}
 
 
 class Command(BaseCommand):
