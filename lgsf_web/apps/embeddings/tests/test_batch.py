@@ -8,6 +8,36 @@ from django.core.management import CommandError, call_command
 from embeddings import batch
 from embeddings.tasks import read_manifest
 
+from .factories import make_task
+
+
+def tasks_of_sizes(*sizes):
+    tasks = [make_task(content_hash=f"sha256:{i}") for i in range(len(sizes))]
+    for task, size in zip(tasks, sizes, strict=True):
+        task.content_length = size
+    return tasks
+
+
+def test_a_shard_for_each_shard_bytes(monkeypatch):
+    monkeypatch.setattr(batch, "SHARD_BYTES", 100)
+    assert batch.shard_count(tasks_of_sizes(60, 60, 60, 60, 60)) == 3
+
+
+def test_no_more_shards_than_tasks(monkeypatch):
+    monkeypatch.setattr(batch, "SHARD_BYTES", 100)
+    assert batch.shard_count(tasks_of_sizes(1000, 1000)) == 2
+
+
+def test_at_least_one_shard():
+    assert batch.shard_count([]) == 1
+    assert batch.shard_count(tasks_of_sizes(0)) == 1
+
+
+def test_no_more_shards_than_batch_allows(monkeypatch):
+    monkeypatch.setattr(batch, "SHARD_BYTES", 1)
+    monkeypatch.setattr(batch, "MAX_SHARDS", 2)
+    assert batch.shard_count(tasks_of_sizes(5, 5, 5)) == 2
+
 
 def test_an_array_job_for_several_shards():
     request = batch.job_request(

@@ -2,7 +2,8 @@
 Running embed_documents on AWS Batch.
 
 `embed_documents --remote` builds the tasks from the database, splits
-them into shards, uploads them as a manifest:
+them into shards (of about SHARD_BYTES each, unless --shards says how
+many), and uploads them as a manifest:
 
     s3://<LGSF_DATA_BUCKET>/<EMBEDDINGS_RUNS_PREFIX><run id>/run.json
     s3://<LGSF_DATA_BUCKET>/<EMBEDDINGS_RUNS_PREFIX><run id>/shard-00000.jsonl
@@ -19,12 +20,25 @@ cdk_stacks/stacks/embeddings_batch.py.
 """
 
 import datetime
+import math
 import os
 import secrets
 import subprocess
 from pathlib import Path
 
 from embeddings.tasks import RUN_NAME, SHARD_NAME
+
+#: When --shards isn't given, the files are split into shards of about
+#: this many bytes. In October 2026 a g6.xlarge did 83MB of documents
+#: (1,427 pages) in 534 seconds, so a shard is about ten minutes' work.
+#: That's long enough that starting a child is a small part of it (a
+#: 20-file run took 31 seconds in all), and short enough that Batch
+#: shares the children out evenly between instances, and the last ones
+#: don't keep the run going long after the rest have finished.
+SHARD_BYTES = 100_000_000
+
+#: Batch's largest array job.
+MAX_SHARDS = 10_000
 
 
 def new_run_id() -> str:
@@ -47,6 +61,12 @@ def git_commit() -> str | None:
 def array_index() -> int:
     """Which shard this Batch job, or array child, runs."""
     return int(os.environ.get("AWS_BATCH_JOB_ARRAY_INDEX", "0"))
+
+
+def shard_count(tasks) -> int:
+    """How many shards to split tasks into, if --shards isn't given."""
+    size = sum(task.content_length for task in tasks)
+    return max(1, min(math.ceil(size / SHARD_BYTES), len(tasks), MAX_SHARDS))
 
 
 def manifest_url(bucket: str, prefix: str, run_id: str) -> str:

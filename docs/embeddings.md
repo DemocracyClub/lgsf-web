@@ -106,15 +106,16 @@ It uses g6 or g5 GPU instances, or c7i or c7a.4xlarge with
 `-c embeddings-instances=cpu`. To submit a run:
 
 ```sh
-AWS_PROFILE=dev-lgsf-dc uv run manage.py embed_documents --remote --shards 20
+AWS_PROFILE=dev-lgsf-dc uv run manage.py embed_documents --remote
 ```
 
-`--remote` splits the files into shards of about the same size, uploads
-them to `s3://lgsf-data-archive/embedding-runs/<run id>/`, and submits
-an array job with a child for each shard. Each child writes its results
-to the bucket. A child whose Spot instance is taken back is retried, and
-skips the files already done. With `--dry-run`, the shards are written
-to a local directory and the job is printed instead of submitted.
+`--remote` splits the files into shards of about 100MB, uploads them to
+`s3://lgsf-data-archive/embedding-runs/<run id>/`, and submits an array
+job with a child for each shard. `--shards N` makes N shards instead.
+Each child writes its results to the bucket. A child whose Spot instance
+is taken back is retried, and skips the files already done. With
+`--dry-run`, the shards are written to a local directory and the job is
+printed instead of submitted.
 
 Follow a run with `aws logs tail /aws/batch/job --follow`. Afterwards,
 `embed_documents --source s3 --dry-run` with the same filters shows
