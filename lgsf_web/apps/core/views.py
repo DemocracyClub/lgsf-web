@@ -3,11 +3,14 @@ from collections import defaultdict
 
 import boto3
 from core.forms import DecisionSearchForm
-from core.models import Chunk, Decision, Embedding
+from core.models import Chunk, Council, Decision, Document, Embedding
+from councillors.models import EnrichedCouncillor, ScrapedCouncillor
 from django.core.paginator import Paginator
+from django.db.models import Count, IntegerField, Model, OuterRef, Subquery
+from django.db.models.functions import Coalesce
 from django.http import HttpResponse
 from django.shortcuts import render
-from django.views.generic import DetailView
+from django.views.generic import DetailView, ListView
 from modelsearch.query import Phrase
 from pgvector.django import CosineDistance
 
@@ -204,3 +207,31 @@ class DecisionDetailView(DetailView):
     model = Decision
     template_name = "core/decision_detail.html"
     queryset = Decision.objects.all().prefetch_related("documents")
+
+
+def councils_with_counts():
+    def count_per_council(model: type[Model], council_field: str) -> Coalesce:
+        counts = (
+            model.objects.filter(**{council_field: OuterRef("pk")})
+            .values(council_field)
+            .annotate(count=Count("pk"))
+            .values("count")
+        )
+        return Coalesce(Subquery(counts, output_field=IntegerField()), 0)
+
+    return Council.objects.annotate(
+        decision_count=count_per_council(Decision, "council"),
+        document_count=count_per_council(Document, "decision__council"),
+        scraped_councillor_count=count_per_council(
+            ScrapedCouncillor, "council"
+        ),
+        enriched_councillor_count=count_per_council(
+            EnrichedCouncillor, "base_councillor__council"
+        ),
+    )
+
+
+class CouncilListView(ListView):
+    template_name = "core/council_list.html"
+    context_object_name = "councils"
+    queryset = councils_with_counts().order_by("territory", "name")

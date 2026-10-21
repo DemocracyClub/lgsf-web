@@ -23,6 +23,11 @@ from django.urls import include, path
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("", core_views.hello_world, name="index"),
+    path(
+        "councils",
+        core_views.CouncilListView.as_view(),
+        name="council-list",
+    ),
     path("decisions/", include("core.urls")),
     path("councillors/", include("councillors.urls")),
 ]
