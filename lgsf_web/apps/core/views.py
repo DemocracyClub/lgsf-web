@@ -235,3 +235,9 @@ class CouncilListView(ListView):
     template_name = "core/council_list.html"
     context_object_name = "councils"
     queryset = councils_with_counts().order_by("territory", "name")
+
+
+class CouncilDetailView(DetailView):
+    template_name = "core/council_detail.html"
+    context_object_name = "council"
+    queryset = councils_with_counts()
