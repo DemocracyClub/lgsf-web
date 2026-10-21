@@ -93,7 +93,7 @@ started again.
 ## Running on AWS Batch
 
 `LGSFEmbeddingsBatch` (`cdk_stacks/stacks/embeddings_batch.py`) runs
-the command on Spot instances, with the image built from
+the command on EC2 instances, with the image built from
 `Dockerfile.embeddings`. It's only in the development environment, and
 is deployed by hand because the image is about 8GB:
 
@@ -103,7 +103,10 @@ AWS_PROFILE=dev-lgsf-dc DC_ENVIRONMENT=development \
 ```
 
 It uses g6 or g5 GPU instances, or c7i or c7a.4xlarge with
-`-c embeddings-instances=cpu`. To submit a run:
+`-c embeddings-instances=cpu`. They're On-Demand instances, or Spot ones
+with `-c embeddings-capacity=spot`. In October 2026 Spot cost about 40%
+as much (a g6.xlarge was about $0.39 an hour, against $1.02 On-Demand),
+but fewer ran at once (see below). To submit a run:
 
 ```sh
 AWS_PROFILE=dev-lgsf-dc uv run manage.py embed_documents --remote
@@ -129,8 +132,9 @@ seconds, so a 100MB shard is about ten minutes' work. It embedded about
 82,000 tokens a minute, and Titan v2's quota is 300,000 tokens a minute
 for the account, which can't be raised in Service Quotas. So the GPU
 compute environment's `max_vcpus` is 16, four g6.xlarge: more would
-wait on Bedrock, costing more without finishing sooner. The Spot quota
-for G instances was 8 vCPUs, so only two ran at once on Spot.
+wait on Bedrock, costing more without finishing sooner. The quota for
+On-Demand G instances was 768 vCPUs, but for Spot ones 8, so only two
+ran at once on Spot.
 
 Follow a run with `aws logs tail /aws/batch/job --follow`. Afterwards,
 `embed_documents --source s3 --dry-run` with the same filters shows
@@ -140,6 +144,7 @@ Before the first run, check:
 
 - `lgsf-data-archive` is publicly readable, so everything written to it
   is public.
-- The quotas for G and VT instances in eu-west-2, which start at 0.
+- The quotas for G and VT instances in eu-west-2. The Spot one,
+  "All G and VT Spot Instance Requests", started at 0.
 - The Bedrock quotas for Titan v2. `max_vcpus` in the stack limits how
   many shards run at once.

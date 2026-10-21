@@ -16,6 +16,13 @@ The instances are GPU ones (g6/g5) unless the context says otherwise:
 
     DC_ENVIRONMENT=development npx cdk deploy LGSFEmbeddingsBatch \\
         -c embeddings-instances=cpu
+
+and On-Demand unless the context says Spot. Spot instances cost about
+40% as much, but can be taken back mid-job, and in October 2026 the
+account's Spot quota for G instances was 8 vCPUs, two g6.xlarge:
+
+    DC_ENVIRONMENT=development npx cdk deploy LGSFEmbeddingsBatch \\
+        -c embeddings-capacity=spot
 """
 
 from dataclasses import dataclass
@@ -103,6 +110,14 @@ class EmbeddingsBatch(Stack):
         )
         instances = INSTANCES[kind]
 
+        capacity = (
+            self.node.try_get_context("embeddings-capacity") or "on-demand"
+        )
+        assert capacity in ("spot", "on-demand"), (
+            "context `embeddings-capacity` must be spot or on-demand"
+        )
+        spot = capacity == "spot"
+
         vpc = ec2.Vpc.from_lookup(self, "default-vpc-id", is_default=True)
 
         image = ecr_assets.DockerImageAsset(
@@ -131,8 +146,13 @@ class EmbeddingsBatch(Stack):
                     image_type=instances.image_type,
                 )
             ],
-            spot=True,
-            allocation_strategy=batch.AllocationStrategy.SPOT_PRICE_CAPACITY_OPTIMIZED,
+            spot=spot,
+            # On-Demand takes Batch's default, BEST_FIT_PROGRESSIVE.
+            allocation_strategy=(
+                batch.AllocationStrategy.SPOT_PRICE_CAPACITY_OPTIMIZED
+                if spot
+                else None
+            ),
             # Nothing runs between jobs.
             minv_cpus=0,
             maxv_cpus=instances.max_vcpus,
