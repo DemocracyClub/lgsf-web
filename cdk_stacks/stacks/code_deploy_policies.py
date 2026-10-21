@@ -113,6 +113,13 @@ CODE_DEPLOY_EC2_POLICY = {
                 "arn:aws:events:eu-west-2:*:event-bus/default",
             ],
         },
+        {
+            "Action": ["bedrock:InvokeModel"],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0",
+            ],
+        },
     ],
 }
 
