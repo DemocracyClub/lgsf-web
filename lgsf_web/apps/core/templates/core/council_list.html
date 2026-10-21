@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Councils</title>
+
+    <!-- TODO: not this -->
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+    <main class="container">
+        <h1>Councils</h1>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Council</th>
+                    <th>Territory</th>
+                    <th>Decisions</th>
+                    <th>Documents</th>
+                    <th>Scraped councillors</th>
+                    <th>Enriched councillors</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for council in councils %}
+                    <tr>
+                        <td>{{ council.name }} ({{ council.code }})</td>
+                        <td>{{ council.territory }}</td>
+                        <td><a href="{% url 'core:decision-search' %}?council={{ council.code }}">{{ council.decision_count }}</a></td>
+                        <td>{{ council.document_count }}</td>
+                        <td><a href="{% url 'councillors:scraped_list' %}?council={{ council.code }}">{{ council.scraped_councillor_count }}</a></td>
+                        <td><a href="{% url 'councillors:enriched_list' %}?base_councillor__council={{ council.code }}">{{ council.enriched_councillor_count }}</a></td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">No councils found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>
