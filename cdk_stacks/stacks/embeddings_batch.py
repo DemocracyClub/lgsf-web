@@ -158,6 +158,10 @@ class EmbeddingsBatch(Stack):
                 # needs debug_toolbar.
                 "DJANGO_SETTINGS_MODULE": "lgsf_web.settings.base",
                 "AWS_DEFAULT_REGION": "eu-west-2",
+                # Without a terminal, Python buffers stdout, so each
+                # file's line reached CloudWatch only when 8KB had built
+                # up, or when the job ended.
+                "PYTHONUNBUFFERED": "1",
             },
             command=["python", "manage.py", "embed_documents", "--help"],
         )
