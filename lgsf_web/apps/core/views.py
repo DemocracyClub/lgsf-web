@@ -43,7 +43,7 @@ VECTOR_SEARCH_LIMIT = 100
 
 
 def embed_text(text):
-    client = boto3.client("bedrock-runtime")
+    client = boto3.client("bedrock-runtime", region_name="eu-west-2")
     response = client.invoke_model(
         modelId=TITAN_MODEL,
         body=json.dumps(
