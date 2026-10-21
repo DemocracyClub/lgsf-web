@@ -22,6 +22,13 @@ def status_choices():
     return [("", "All statuses")] + [(status, status) for status in statuses]
 
 
+class VectorSearchForm(forms.Form):
+    q = forms.CharField(
+        label="Search",
+        widget=forms.TextInput(attrs={"placeholder": "Search chunks…"}),
+    )
+
+
 class DecisionSearchForm(forms.Form):
     q = forms.CharField(
         label="Search",

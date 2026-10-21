@@ -172,3 +172,6 @@ class Council(models.Model):
     code = models.CharField(max_length=3, blank=False, primary_key=True)
     name = models.CharField(max_length=255, blank=False)
     territory = models.CharField(max_length=3, blank=False)
+
+    def __str__(self):
+        return self.name

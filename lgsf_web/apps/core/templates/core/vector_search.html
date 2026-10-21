@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Vector Search</title>
+
+    <!-- TODO: not this -->
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+    <main class="container">
+        <h1>Vector Search</h1>
+
+        <form method="get">
+            {{ form.q }}
+            <button type="submit">Search</button>
+        </form>
+
+        {% if results %}
+            <h2>{{ results|length }} Results</h2>
+            {% for result in results %}
+                {% with chunk=result.chunk decision=result.chunk.document.decision %}
+                <article>
+                    <h3><a href="{% url 'core:decision-detail' decision.pk %}">{{ decision.raw_title }}</a></h3>
+                    <p>{{ chunk.text }}</p>
+                    <footer>
+                        {{ decision.council }} &middot;
+                        <a href="{{ chunk.document.s3_url }}" target="_blank">{{ chunk.document }}</a>
+                        (chunk {{ chunk.chunk_index }} of {{ chunk.chunk_count }}) &middot;
+                        distance {{ result.distance|floatformat:4 }}
+                    </footer>
+                </article>
+                {% endwith %}
+            {% endfor %}
+        {% endif %}
+    </main>
+</body>
+</html>
