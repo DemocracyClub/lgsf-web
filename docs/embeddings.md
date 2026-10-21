@@ -117,6 +117,21 @@ is taken back is retried, and skips the files already done. With
 `--dry-run`, the shards are written to a local directory and the job is
 printed instead of submitted.
 
+Batch starts as many instances as the compute environment's `max_vcpus`
+and the EC2 quotas allow, runs a child on each, and gives an instance
+the next child when it finishes one. The first two runs started 3 and 5½
+minutes after they were submitted, while an instance started and
+fetched the image. Later children on the same instance use the image
+already there.
+
+In October 2026, a g6.xlarge did 83MB of PDFs (1,427 pages) in 534
+seconds, so a 100MB shard is about ten minutes' work. It embedded about
+82,000 tokens a minute, and Titan v2's quota is 300,000 tokens a minute
+for the account, which can't be raised in Service Quotas. So the GPU
+compute environment's `max_vcpus` is 16, four g6.xlarge: more would
+wait on Bedrock, costing more without finishing sooner. The Spot quota
+for G instances was 8 vCPUs, so only two ran at once on Spot.
+
 Follow a run with `aws logs tail /aws/batch/job --follow`. Afterwards,
 `embed_documents --source s3 --dry-run` with the same filters shows
 what's left.
@@ -126,5 +141,5 @@ Before the first run, check:
 - `lgsf-data-archive` is publicly readable, so everything written to it
   is public.
 - The quotas for G and VT instances in eu-west-2, which start at 0.
-- The Bedrock quotas for Titan v2. `MAX_VCPUS` in the stack limits how
+- The Bedrock quotas for Titan v2. `max_vcpus` in the stack limits how
   many shards run at once.

@@ -63,9 +63,10 @@ class TitanV2Embedder(EmbedderBase):
     dimensions = 1024
 
     #: Bedrock takes one text per InvokeModel call for this model, so
-    #: texts are sent from several threads. Its default quota is 2,000
-    #: requests a minute per account and region; when that's reached,
-    #: the adaptive retry mode below slows the client down.
+    #: texts are sent from several threads. Its quotas in eu-west-2 are
+    #: 6,000 requests and 300,000 tokens a minute for the account; when
+    #: either is reached, the adaptive retry mode below slows the client
+    #: down.
     max_workers = 8
 
     def __init__(self, client=None):

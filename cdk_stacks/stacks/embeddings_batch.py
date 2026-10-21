@@ -40,12 +40,6 @@ TITAN_V2 = (
     "arn:aws:bedrock:eu-west-2::foundation-model/amazon.titan-embed-text-v2:0"
 )
 
-#: The most vCPUs running at once. Each shard embeds from 8 threads, and
-#: Titan's default quota is 2,000 requests a minute for the account, so
-#: this also limits how hard the jobs together use Bedrock. Raise it with
-#: the quota in mind.
-MAX_VCPUS = 32
-
 
 @dataclass
 class Instances:
@@ -60,6 +54,11 @@ class Instances:
     #: Less than the instance's memory, which ECS keeps some of.
     memory_gib: int
     gpus: int
+    #: The most vCPUs running at once, which limits how many shards run
+    #: at once. Batch counts every vCPU of an instance, so a g6.2xlarge
+    #: counts 8 though its one job asks for 4. The EC2 quotas for the
+    #: instances can limit it further.
+    max_vcpus: int
 
 
 INSTANCES = {
@@ -73,6 +72,11 @@ INSTANCES = {
         vcpus=4,
         memory_gib=14,
         gpus=1,
+        # Four g6.xlarge. In October 2026 one embedded about 82,000
+        # tokens a minute, and Titan's quota is 300,000 for the account,
+        # so more would spend their time waiting on Bedrock: costing
+        # more without finishing sooner.
+        max_vcpus=16,
     ),
     # 16 vCPUs and 32 GiB.
     "cpu": Instances(
@@ -83,6 +87,8 @@ INSTANCES = {
         vcpus=16,
         memory_gib=30,
         gpus=0,
+        # Two instances.
+        max_vcpus=32,
     ),
 }
 
@@ -129,7 +135,7 @@ class EmbeddingsBatch(Stack):
             allocation_strategy=batch.AllocationStrategy.SPOT_PRICE_CAPACITY_OPTIMIZED,
             # Nothing runs between jobs.
             minv_cpus=0,
-            maxv_cpus=MAX_VCPUS,
+            maxv_cpus=instances.max_vcpus,
             launch_template=self.create_launch_template(),
         )
 
