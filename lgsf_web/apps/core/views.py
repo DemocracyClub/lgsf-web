@@ -66,7 +66,13 @@ def vector_search(request):
     if form.is_valid():
         decisions = form.filter_decisions(Decision.objects.all())
 
+        BATCH_SIZE = 10
+        MAX_RESULTS = 100
+        MIN_RESULTS_BEFORE_STOP = 5
+        DISTANCE_GAP_THRESHOLD = 0.01
+
         query_embedding = embed_text(form.cleaned_data["q"])
+
         embeddings = (
             Embedding.objects.filter(
                 model=TITAN_MODEL,
@@ -74,11 +80,40 @@ def vector_search(request):
             )
             .select_related("chunk__document__decision__council")
             .annotate(distance=CosineDistance("embedding", query_embedding))
-            .order_by("distance")[:VECTOR_SEARCH_LIMIT]
+            .order_by("distance")
         )
-        results = [
-            {"chunk": e.chunk, "distance": e.distance} for e in embeddings
-        ]
+
+        results = []
+        offset = 0
+        stop = False
+
+        while len(results) < MAX_RESULTS and not stop:
+            batch = list(embeddings[offset : offset + BATCH_SIZE])
+
+            if not batch:
+                break
+
+            for embedding in batch:
+                distance = embedding.distance
+
+                # Once we have enough results, look for a substantial
+                # deterioration in relevance.
+                if len(results) >= MIN_RESULTS_BEFORE_STOP:
+                    previous_distance = results[-1]["distance"]
+                    gap = distance - previous_distance
+
+                    if gap >= DISTANCE_GAP_THRESHOLD:
+                        stop = True
+                        break
+
+                results.append(
+                    {
+                        "chunk": embedding.chunk,
+                        "distance": distance,
+                    }
+                )
+
+            offset += len(batch)
 
     context = {
         "form": form,
