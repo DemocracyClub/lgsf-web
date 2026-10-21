@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ council.name }}</title>
+
+    <!-- TODO: not this -->
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+    <main class="container">
+        <p><a href="{% url 'council-list' %}">&laquo; All councils</a></p>
+        <h1>{{ council.name }} ({{ council.code }})</h1>
+
+        <dl>
+            <dt>Territory</dt>
+            <dd>{{ council.territory }}</dd>
+            <dt>Decisions</dt>
+            <dd><a href="{% url 'core:decision-search' %}?council={{ council.code }}">{{ council.decision_count }}</a></dd>
+            <dt>Documents</dt>
+            <dd>{{ council.document_count }}</dd>
+            <dt>Scraped councillors</dt>
+            <dd><a href="{% url 'councillors:scraped_list' %}?council={{ council.code }}">{{ council.scraped_councillor_count }}</a></dd>
+            <dt>Enriched councillors</dt>
+            <dd><a href="{% url 'councillors:enriched_list' %}?base_councillor__council={{ council.code }}">{{ council.enriched_councillor_count }}</a></dd>
+        </dl>
+
+        {% if council.scraped_councillor_count %}
+            <p><a href="{% url 'councillors:summary_detail' council.code %}">Councillor matching summary</a></p>
+        {% endif %}
+
+        <!-- TODO: link to the decisions summary page for this council once it exists -->
+        <p><a href="#">Decisions summary</a></p>
+    </main>
+</body>
+</html>
