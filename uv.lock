@@ -458,7 +458,7 @@ dependencies = [
 [[package]]
 name = "dc-name-matching"
 version = "0.1.0"
-source = { git = "https://github.com/DemocracyClub/dc-name-matching#df7779f35b4af3d9b475d9374988b71350e9ff2c" }
+source = { git = "https://github.com/DemocracyClub/dc-name-matching#25582078cddea259ebd056f8f0401e0b88d37075" }
 dependencies = [
     { name = "httpx" },
 ]
