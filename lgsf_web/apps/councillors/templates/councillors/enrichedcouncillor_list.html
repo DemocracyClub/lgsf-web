@@ -28,22 +28,20 @@
       <thead>
         <tr>
           <th>Council</th>
-          <th>Scraped name</th>
-          <th>YNR name</th>
-          <th>Division</th>
-          <th>Party</th>
-          <th>Compare</th>
+          <th>YNR Name (ID)</th>
+          <th>EE Division Name (ID)</th>
+          <th>YNR Party Name (ID)</th>
+          <th>Details</th>
         </tr>
       </thead>
       <tbody>
         {% for councillor in object_list %}
           <tr>
             <td>{{ councillor.base_councillor.council_id }}</td>
-            <td><a href="{% url 'councillors:enriched_detail' councillor.pk %}">{{ councillor.base_councillor.raw_name }}</a></td>
-            <td>{{ councillor.ynr_match }}</td>
+            <td>{{ councillor.name_match|default_if_none:"" }}</td>
             <td>{{ councillor.division_match }}</td>
             <td>{{ councillor.party_match }}</td>
-            <td><a href="{% url 'councillors:compare_detail' councillor.base_councillor.pk %}">Compare</a></td>
+            <td><a href="{% url 'councillors:compare_detail' councillor.base_councillor.pk %}">View</a></td>
           </tr>
         {% empty %}
           <tr><td colspan="6">No enriched councillors.</td></tr>
