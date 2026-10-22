@@ -141,7 +141,7 @@ def summary_stats(qs):
                 .values(backend=F(f"enriched__{key}_backend"))
                 .annotate(count=Count("id"))
             ),
-            "filter_param": key,
+            "filter_param": f"missing_{key}",
             "backend_param": key.replace("_match", "_backend"),
             "complete": counts[key],
             "percent": round(100 * counts[key] / total, 1) if total else 0,
