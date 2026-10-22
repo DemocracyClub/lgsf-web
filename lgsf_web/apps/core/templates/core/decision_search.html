@@ -53,11 +53,23 @@
             <button type="submit">Search</button>
         </form>
 
-        {% if results %}
-            <h2>{{ results|length }} Results</h2>
-            {% for result in results %}
+        {% if page %}
+            <h2>{{ page.paginator.count }} Results (Page {{ page.number }} of {{ page.paginator.num_pages }})</h2>
+            {% for result in page %}
                 {% include "core/snippets/inline_decision.html" with decision=result query=query %}
             {% endfor %}
+
+            {% if page.has_other_pages %}
+                <nav aria-label="Pagination">
+                    {% if page.has_previous %}
+                        <a href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.previous_page_number }}" rel="prev">Previous</a>
+                    {% endif %}
+                    Page {{ page.number }} of {{ page.paginator.num_pages }}
+                    {% if page.has_next %}
+                        <a href="?{% if querystring %}{{ querystring }}&amp;{% endif %}page={{ page.next_page_number }}" rel="next">Next</a>
+                    {% endif %}
+                </nav>
+            {% endif %}
         {% endif %}
     </main>
 </body>

@@ -4,6 +4,7 @@ from collections import defaultdict
 import boto3
 from core.forms import DecisionSearchForm
 from core.models import Chunk, Decision, Embedding
+from django.core.paginator import Paginator
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import DetailView
@@ -19,6 +20,7 @@ RRF_K = 60
 DECISION_SEARCH_LIMIT = 100
 CHUNK_SEARCH_LIMIT = 1000
 MAX_CHUNKS_PER_DECISION = 5
+SEARCH_RESULTS_PER_PAGE = 20
 
 
 def fuse_chunks(*ranked_lists):
@@ -115,11 +117,18 @@ def decision_search(request):
                 queryset, chunks, query, vector_chunks
             )
         else:
-            results = queryset
+            results = queryset.order_by("-publication_date", "pk")
+
+    page = Paginator(results, SEARCH_RESULTS_PER_PAGE).get_page(
+        request.GET.get("page")
+    )
+    params = request.GET.copy()
+    params.pop("page", None)
 
     context = {
         "form": form,
-        "results": results,
+        "page": page,
+        "querystring": params.urlencode(),
         "query": form.cleaned_data.get("q", "") if form.is_valid() else "",
     }
     return render(request, "core/decision_search.html", context)
