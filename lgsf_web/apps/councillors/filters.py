@@ -10,6 +10,13 @@ from django.db.models import F
 from django.forms import CheckboxInput, CheckboxSelectMultiple
 
 
+class OptionalCheckboxInput(CheckboxInput):
+    """Unchecked means 'don't filter', not 'filter for False'."""
+
+    def value_from_datadict(self, data, files, name):
+        return True if super().value_from_datadict(data, files, name) else None
+
+
 class EmptyStringFilter(filters.BooleanFilter):
     def filter(self, qs, value):
         if value in EMPTY_VALUES:
@@ -91,7 +98,7 @@ class EnrichedCouncillorFilterSet(filters.FilterSet):
         label="Matched Division Name",
     )
     matched_person_name = filters.CharFilter(
-        field_name="person_match__person_name",
+        field_name="name_match__person_name",
         lookup_expr="icontains",
         label="Matched Person Name",
     )
@@ -128,24 +135,24 @@ class CompareFilterSet(EnrichedCouncillorFilterSet):
         field_name="name_match",
         label="Missing Name?",
         lookup_expr="isnull",
-        widget=CheckboxInput(),
+        widget=OptionalCheckboxInput(),
     )
     missing_division_match = filters.BooleanFilter(
         field_name="division_match",
         label="Missing EE Division?",
         lookup_expr="isnull",
-        widget=CheckboxInput(),
+        widget=OptionalCheckboxInput(),
     )
     missing_party_match = filters.BooleanFilter(
         field_name="party_match",
         label="Missing Party?",
         lookup_expr="isnull",
-        widget=CheckboxInput(),
+        widget=OptionalCheckboxInput(),
     )
     party_differs_from_elected = filters.BooleanFilter(
         label="Matched Party differs from Party at Election?",
         method="filter_party_differs_from_elected",
-        widget=CheckboxInput(),
+        widget=OptionalCheckboxInput(),
     )
 
     division_backend = backend_filter(
@@ -156,12 +163,9 @@ class CompareFilterSet(EnrichedCouncillorFilterSet):
 
     def filter_party_differs_from_elected(self, queryset, name, value):
         # Rows missing either side are a separate problem, not a mismatch
-        both = queryset.filter(
+        return queryset.filter(
             party_match__isnull=False, elected_as__isnull=False
-        )
-        if value:
-            return both.exclude(party_match=F("elected_as"))
-        return both.filter(party_match=F("elected_as"))
+        ).exclude(party_match=F("elected_as"))
 
     class Meta:
         model = EnrichedCouncillor
