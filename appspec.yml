@@ -86,7 +86,7 @@ hooks:
       timeout: 300
       runas: root
     - location: deploy/hooks/afterinstall/migrate.sh
-      timeout: 300
+      timeout: 600
       runas: lgsf_web
     - location: deploy/hooks/afterinstall/collectstatic.sh
       timeout: 300
