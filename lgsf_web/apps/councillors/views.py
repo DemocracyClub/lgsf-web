@@ -102,7 +102,12 @@ class CompareDetailView(DetailView):
 
     queryset = ScrapedCouncillor.objects.filter(
         enriched__isnull=False
-    ).select_related("enriched")
+    ).select_related(
+        "enriched",
+        "enriched__name_match",
+        "enriched__division_match",
+        "enriched__party_match",
+    )
     template_name = "councillors/compare_detail.html"
 
 
