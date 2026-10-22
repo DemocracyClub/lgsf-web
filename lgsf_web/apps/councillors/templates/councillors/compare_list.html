@@ -54,7 +54,7 @@
           <th>Name</th>
           <th>Division</th>
           <th>Party</th>
-          <th>Links</th>
+          <th>Ext. Links</th>
         </tr>
       </thead>
       <tbody>
@@ -74,7 +74,25 @@
                 {% include "councillors/includes/match_cell.html" with raw=scraped.raw_party match=enriched.party_match value=enriched.party_match.party_name backend=enriched.party_match_backend confidence=enriched.party_match_confidence synonym=enriched.party_synonym_match only %}
               </td>
               <td>
-                <a href="{% url 'councillors:compare_detail' scraped.id %}">Compare</a>
+                <small>
+                  <ul>
+                  {% if enriched.party_match.wcivf_link %}
+                  <li>
+                    <a href="{{ enriched.party_match.wcivf_link }}">Party</a>
+                  </li>
+                  {% endif %}
+                  {% if enriched.division_match.ee_link %}
+                  <li>
+                    <a href="{{ enriched.division_match.ee_link }}">Divset</a>
+                  </li>
+                  {% endif %}
+                  {% if enriched.name_match.ynr_link %}
+                  <li>
+                    <a href="{{ enriched.name_match.ynr_link }}">YNR</a>
+                  </li>
+                  {% endif %}
+                  </ul>
+                </small>
               </td>
             </tr>
           {% endwith %}

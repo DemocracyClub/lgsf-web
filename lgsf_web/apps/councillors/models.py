@@ -118,6 +118,9 @@ class EEDivisionMatch(BaseMatch):
     division_name = models.CharField(max_length=255, blank=True)
     divisionset_id = models.IntegerField(null=True, blank=True)
 
+    @property
+    def ee_link(self):
+        return f"https://elections.democracyclub.org.uk/organisations/divisionsets/{self.divisionset_id}/"
 
 class YNRPartyMatch(BaseMatch):
     enriched_field = "party_match"
@@ -127,6 +130,10 @@ class YNRPartyMatch(BaseMatch):
     party_id = models.CharField(max_length=255, unique=True)
     party_name = models.CharField(max_length=255, blank=True)
 
+    @property
+    def wcivf_link(self):
+        return f"https://whocanivotefor.co.uk/parties/party:{self.party_id}"
+
 
 class YNRNameMatch(BaseMatch):
     enriched_field = "name_match"
@@ -135,3 +142,9 @@ class YNRNameMatch(BaseMatch):
 
     person_id = models.IntegerField(unique=True)
     person_name = models.CharField(max_length=255, blank=True)
+
+    @property
+    def ynr_link(self):
+        return (
+            f"https://candidates.democracyclub.org.uk/person/{self.person_id}"
+        )
