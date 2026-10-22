@@ -114,6 +114,7 @@ def decision_search(request):
     context = {
         "form": form,
         "results": results,
+        "query": form.cleaned_data.get("q", "") if form.is_valid() else "",
     }
     return render(request, "core/decision_search.html", context)
 

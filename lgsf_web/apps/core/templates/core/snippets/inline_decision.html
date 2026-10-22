@@ -1,3 +1,4 @@
+{% load core_tags %}
 <article>
     <h3><a href="{% url 'core:decision-detail' decision.pk %}">{{ decision.raw_title }}</a></h3>
     <dl>
@@ -10,7 +11,7 @@
     </dl>
     {% for chunk in decision.matched_chunks %}
         <blockquote>
-            {{ chunk.text|truncatewords:60|linebreaks }}
+            {{ chunk|chunk_text:query|linebreaks }}
             <footer>
                 <a href="{{ chunk.document.s3_url }}" target="_blank">{{ chunk.document }}</a>
             </footer>

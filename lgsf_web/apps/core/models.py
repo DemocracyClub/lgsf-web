@@ -1,5 +1,9 @@
+import re
+
 from django.conf import settings
 from django.db import models
+from django.utils.html import escape
+from django.utils.safestring import mark_safe
 from modelsearch import index
 from modelsearch.queryset import SearchableQuerySetMixin
 from pgvector.django import VectorField
@@ -175,6 +179,47 @@ class Chunk(index.Indexed, models.Model):
             ),
         )
         ordering = ("document", "chunk_index")
+
+    def text_for_display(self, query="", max_words=60, lead_words=15):
+        """
+        HTML snippet of `text` with words from `query` bolded.
+
+        The snippet starts shortly before the first match. If nothing
+        matches (e.g. a vector-only hit), it is the start of the text.
+        """
+        tokens = list(re.finditer(r"\S+", self.text))
+        terms = {t for t in re.split(r"\W+", str(query or "")) if len(t) > 2}
+        pattern = None
+        if terms:
+            longest_first = sorted(terms, key=len, reverse=True)
+            pattern = re.compile(
+                r"\b(?:" + "|".join(map(re.escape, longest_first)) + ")",
+                re.IGNORECASE,
+            )
+
+        start = 0
+        if pattern:
+            for i, token in enumerate(tokens):
+                if pattern.search(token.group()):
+                    start = max(0, i - lead_words)
+                    break
+        end = min(len(tokens), start + max_words)
+
+        if not tokens:
+            return mark_safe("")
+        snippet = self.text[tokens[start].start() : tokens[end - 1].end()]
+
+        html = []
+        position = 0
+        for match in pattern.finditer(snippet) if pattern else ():
+            html.append(escape(snippet[position : match.start()]))
+            html.append(f"<strong>{escape(match.group())}</strong>")
+            position = match.end()
+        html.append(escape(snippet[position:]))
+
+        prefix = "…" if start > 0 else ""
+        suffix = "…" if end < len(tokens) else ""
+        return mark_safe(prefix + "".join(html) + suffix)
 
     def __str__(self):
         return self.chunk_id
