@@ -2,7 +2,7 @@ import json
 from collections import defaultdict
 
 import boto3
-from core.forms import DecisionSearchForm, VectorSearchForm
+from core.forms import DecisionSearchForm
 from core.models import Chunk, Decision, Embedding
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -21,18 +21,31 @@ CHUNK_SEARCH_LIMIT = 1000
 MAX_CHUNKS_PER_DECISION = 5
 
 
-def fused_decision_search(decisions, chunks, query):
+def fuse_chunks(*ranked_lists):
+    """Reciprocal rank fusion of ranked Chunk lists, de-duplicated by pk."""
+    scores = defaultdict(float)
+    by_pk = {}
+    for hits in ranked_lists:
+        for rank, chunk in enumerate(hits, start=1):
+            scores[chunk.pk] += 1 / (RRF_K + rank)
+            by_pk.setdefault(chunk.pk, chunk)
+    return [by_pk[pk] for pk in sorted(scores, key=scores.get, reverse=True)]
+
+
+def fused_decision_search(decisions, chunks, query, vector_chunks=()):
     """
     Reciprocal rank fusion of Decision and Chunk search results.
 
-    Returns Decisions ordered by fused score, each with `rrf_score` and
-    `matched_chunks` attributes. Decisions matched only via their chunks
-    are included.
+    Full-text and vector Chunk hits are fused first, then fused with the
+    Decision hits. Returns Decisions ordered by fused score, each with
+    `rrf_score` and `matched_chunks` attributes. Decisions matched only
+    via their chunks are included.
     """
     decision_hits = list(decisions.search(query)[:DECISION_SEARCH_LIMIT])
-    chunk_hits = list(
+    fts_chunks = list(
         chunks.select_related("document").search(query)[:CHUNK_SEARCH_LIMIT]
     )
+    chunk_hits = fuse_chunks(fts_chunks, vector_chunks)
 
     scores = defaultdict(float)
     matched_chunks = defaultdict(list)
@@ -42,10 +55,11 @@ def fused_decision_search(decisions, chunks, query):
 
     for rank, chunk in enumerate(chunk_hits, start=1):
         decision_id = chunk.document.decision_id
-        scores[decision_id] += 1 / (RRF_K + rank)
-        # Chunks arrive in rank order, so the first N are the most relevant
+        # Only a decision's best chunks count, so many weak chunks can't
+        # outrank one strong chunk. Chunks arrive in rank order.
         if len(matched_chunks[decision_id]) < MAX_CHUNKS_PER_DECISION:
             matched_chunks[decision_id].append(chunk)
+            scores[decision_id] += 1 / (RRF_K + rank)
 
     by_pk = {decision.pk: decision for decision in decision_hits}
     missing = scores.keys() - by_pk.keys()
@@ -66,17 +80,34 @@ def decision_search(request):
     results = []
 
     if form.is_valid():
-        queryset = form.filter_decisions(
+        queryset = form.filter(
             Decision.objects.all().prefetch_related("documents")
         )
 
         if query := form.cleaned_data["q"]:
             if form.cleaned_data["search_mode"] == "phrase":
                 query = Phrase(query)
-            chunks = form.filter_decisions(
+            chunks = form.filter(
                 Chunk.objects.all(), prefix="document__decision__"
             )
-            results = fused_decision_search(queryset, chunks, query)
+
+            vector_chunks = []
+            # Semantic similarity is meaningless for an exact phrase match
+            if form.cleaned_data["search_mode"] != "phrase":
+                embeddings = form.filter(
+                    Embedding.objects.select_related("chunk__document"),
+                    prefix="chunk__document__decision__",
+                )
+                vector_chunks = [
+                    hit["chunk"]
+                    for hit in similar_chunks(
+                        form.cleaned_data["q"], embeddings
+                    )
+                ]
+
+            results = fused_decision_search(
+                queryset, chunks, query, vector_chunks
+            )
         else:
             results = queryset
 
@@ -89,7 +120,6 @@ def decision_search(request):
 
 TITAN_MODEL = "amazon.titan-embed-text-v2:0"
 TITAN_DIMENSIONS = 1024
-VECTOR_SEARCH_LIMIT = 100
 
 
 def embed_text(text):
@@ -109,67 +139,49 @@ def embed_text(text):
     return json.loads(response["body"].read())["embedding"]
 
 
-def vector_search(request):
-    form = VectorSearchForm(request.GET or None)
+VECTOR_BATCH_SIZE = 10
+VECTOR_MAX_RESULTS = 100
+VECTOR_MIN_RESULTS_BEFORE_STOP = 5
+VECTOR_DISTANCE_GAP_THRESHOLD = 0.01
+
+
+def similar_chunks(text, embeddings):
+    """
+    Nearest chunks to `text` as [{"chunk", "distance"}, ...], closest first.
+
+    `embeddings` is an Embedding queryset, already filtered as required.
+    """
+    query_embedding = embed_text(text)
+    embeddings = (
+        embeddings.filter(model=TITAN_MODEL)
+        .annotate(distance=CosineDistance("embedding", query_embedding))
+        .order_by("distance")
+    )
+
     results = []
+    offset = 0
 
-    if form.is_valid():
-        decisions = form.filter_decisions(Decision.objects.all())
+    while len(results) < VECTOR_MAX_RESULTS:
+        batch = list(embeddings[offset : offset + VECTOR_BATCH_SIZE])
 
-        BATCH_SIZE = 10
-        MAX_RESULTS = 100
-        MIN_RESULTS_BEFORE_STOP = 5
-        DISTANCE_GAP_THRESHOLD = 0.01
+        if not batch:
+            break
 
-        query_embedding = embed_text(form.cleaned_data["q"])
+        for embedding in batch:
+            distance = embedding.distance
 
-        embeddings = (
-            Embedding.objects.filter(
-                model=TITAN_MODEL,
-                chunk__document__decision__in=decisions.values("pk"),
-            )
-            .select_related("chunk__document__decision__council")
-            .annotate(distance=CosineDistance("embedding", query_embedding))
-            .order_by("distance")
-        )
+            # Once we have enough results, look for a substantial
+            # deterioration in relevance.
+            if len(results) >= VECTOR_MIN_RESULTS_BEFORE_STOP:
+                gap = distance - results[-1]["distance"]
+                if gap >= VECTOR_DISTANCE_GAP_THRESHOLD:
+                    return results
 
-        results = []
-        offset = 0
-        stop = False
+            results.append({"chunk": embedding.chunk, "distance": distance})
 
-        while len(results) < MAX_RESULTS and not stop:
-            batch = list(embeddings[offset : offset + BATCH_SIZE])
+        offset += len(batch)
 
-            if not batch:
-                break
-
-            for embedding in batch:
-                distance = embedding.distance
-
-                # Once we have enough results, look for a substantial
-                # deterioration in relevance.
-                if len(results) >= MIN_RESULTS_BEFORE_STOP:
-                    previous_distance = results[-1]["distance"]
-                    gap = distance - previous_distance
-
-                    if gap >= DISTANCE_GAP_THRESHOLD:
-                        stop = True
-                        break
-
-                results.append(
-                    {
-                        "chunk": embedding.chunk,
-                        "distance": distance,
-                    }
-                )
-
-            offset += len(batch)
-
-    context = {
-        "form": form,
-        "results": results,
-    }
-    return render(request, "core/vector_search.html", context)
+    return results
 
 
 class DecisionDetailView(DetailView):

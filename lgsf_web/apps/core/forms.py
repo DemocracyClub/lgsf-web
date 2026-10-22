@@ -22,9 +22,11 @@ def status_choices():
     return [("", "All statuses")] + [(status, status) for status in statuses]
 
 
-class DecisionFilterForm(forms.Form):
-    field_order = ("q",)
-
+class DecisionSearchForm(forms.Form):
+    q = forms.CharField(
+        label="Search",
+        widget=forms.TextInput(attrs={"placeholder": "Search decisions…"}),
+    )
     council = forms.ChoiceField(
         label="Council",
         required=False,
@@ -59,8 +61,17 @@ class DecisionFilterForm(forms.Form):
         label="Subject to call-in only",
         required=False,
     )
+    search_mode = forms.ChoiceField(
+        label="Search mode",
+        choices=[
+            ("simple", "Simple search"),
+            ("phrase", "Exact phrase"),
+        ],
+        initial="simple",
+        widget=forms.RadioSelect,
+    )
 
-    def filter_decisions(self, queryset, prefix=""):
+    def filter(self, queryset, prefix=""):
         # prefix lets the same filters apply to models related to Decision,
         # e.g. "document__decision__" for Chunk
         data = self.cleaned_data
@@ -93,26 +104,3 @@ class DecisionFilterForm(forms.Form):
             )
 
         return queryset
-
-
-class VectorSearchForm(DecisionFilterForm):
-    q = forms.CharField(
-        label="Search",
-        widget=forms.TextInput(attrs={"placeholder": "Search chunks…"}),
-    )
-
-
-class DecisionSearchForm(DecisionFilterForm):
-    q = forms.CharField(
-        label="Search",
-        widget=forms.TextInput(attrs={"placeholder": "Search decisions…"}),
-    )
-    search_mode = forms.ChoiceField(
-        label="Search mode",
-        choices=[
-            ("simple", "Simple search"),
-            ("phrase", "Exact phrase"),
-        ],
-        initial="simple",
-        widget=forms.RadioSelect,
-    )
