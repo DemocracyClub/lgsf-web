@@ -27,7 +27,7 @@
                     <tr>
                         <td><a href="{% url 'council-detail' council.code %}">{{ council.name }} ({{ council.code }})</a></td>
                         <td>{{ council.territory }}</td>
-                        <td><a href="{% url 'core:decision-search' %}?council={{ council.code }}">{{ council.decision_count }}</a></td>
+                        <td><a href="{% url 'council-decisions' council.code %}">{{ council.decision_count }}</a></td>
                         <td>{{ council.document_count }}</td>
                         <td><a href="{% url 'councillors:scraped_list' %}?council={{ council.code }}">{{ council.scraped_councillor_count }}</a></td>
                         <td><a href="{% url 'councillors:enriched_list' %}?base_councillor__council={{ council.code }}">{{ council.enriched_councillor_count }}</a></td>

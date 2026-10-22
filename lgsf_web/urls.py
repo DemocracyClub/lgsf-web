@@ -33,6 +33,11 @@ urlpatterns = [
         core_views.CouncilDetailView.as_view(),
         name="council-detail",
     ),
+    path(
+        "councils/<str:pk>/decisions",
+        core_views.CouncilDecisionListView.as_view(),
+        name="council-decisions",
+    ),
     path("decisions/", include("core.urls")),
     path("councillors/", include("councillors.urls")),
 ]

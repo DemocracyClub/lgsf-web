@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Decisions: {{ council.name }}</title>
+
+    <!-- TODO: not this -->
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+    <main class="container">
+        <p><a href="{% url 'council-detail' council.code %}">&laquo; {{ council.name }}</a></p>
+        <h1>Decisions: {{ council.name }} ({{ council.code }})</h1>
+
+        <p>{{ decisions|length }} decisions</p>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Title</th>
+                    <th>Decision maker</th>
+                    <th>Status</th>
+                    <th>Key decision</th>
+                    <th>Documents</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for decision in decisions %}
+                    <tr>
+                        <td>{{ decision.raw_date }}</td>
+                        <td><a href="{% url 'core:decision-detail' decision.pk %}">{{ decision.raw_title }}</a></td>
+                        <td>{{ decision.raw_decision_maker }}</td>
+                        <td>{{ decision.status }}</td>
+                        <td>{% if decision.is_key_decision %}Yes{% endif %}</td>
+                        <td>{{ decision.document_count }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">No decisions found.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>

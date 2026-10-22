@@ -9,7 +9,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, IntegerField, Model, OuterRef, Subquery
 from django.db.models.functions import Coalesce
 from django.http import HttpResponse
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 from django.views.generic import DetailView, ListView
 from modelsearch.query import Phrase
 from pgvector.django import CosineDistance
@@ -241,3 +241,21 @@ class CouncilDetailView(DetailView):
     template_name = "core/council_detail.html"
     context_object_name = "council"
     queryset = councils_with_counts()
+
+
+class CouncilDecisionListView(ListView):
+    template_name = "core/council_decisions.html"
+    context_object_name = "decisions"
+
+    def get_queryset(self):
+        self.council = get_object_or_404(Council, pk=self.kwargs["pk"])
+        return (
+            Decision.objects.filter(council=self.council)
+            .annotate(document_count=Count("documents"))
+            .order_by("-raw_date", "pk")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["council"] = self.council
+        return context
