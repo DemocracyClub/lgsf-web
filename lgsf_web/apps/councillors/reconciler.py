@@ -17,41 +17,43 @@ class CouncillorReconciler(CouncilMixin):
 
     def reconcile(self):
         councillors = self.get_scraped_councillors(self.council_id)
-        clr_to_match_objs = {clr: [] for clr in councillors}
+        clr_to_matches = {clr: [] for clr in councillors}
 
         for matcher in self.matchers:
-            self._get_clr_matches(clr_to_match_objs, matcher)
+            self._get_clr_matches(clr_to_matches, matcher)
 
         with transaction.atomic():
-            for clr, matches in clr_to_match_objs.items():
-                enriched, _ = EnrichedCouncillor.objects.update_or_create(
+            for clr, matches in clr_to_matches.items():
+                enriched, _ = EnrichedCouncillor.objects.get_or_create(
                     base_councillor=clr,
                 )
 
-                for match in matches:
+                for match, backend, confidence in matches:
                     self._enrich_matches_with_csv_data(match)
-                    match_class = type(match)
-                    defaults = {
-                        match.id_field: getattr(match, match.id_field),
-                        match.value_field: getattr(match, match.value_field),
-                        "match_backend": match.match_backend,
-                        "match_confidence": match.match_confidence,
-                    }
-                    match_class.objects.update_or_create(
-                        councillor=enriched,
-                        defaults=defaults,
+                    lookup, _ = type(match).objects.update_or_create(
+                        **{match.id_field: getattr(match, match.id_field)},
+                        defaults={
+                            match.value_field: getattr(match, match.value_field)
+                        },
                     )
+                    field = match.enriched_field
+                    setattr(enriched, field, lookup)
+                    setattr(enriched, f"{field}_backend", backend)
+                    setattr(enriched, f"{field}_confidence", confidence)
+                enriched.save()
 
     def _enrich_matches_with_csv_data(self, match):
-        if type(match).__name__ == "EEDivisionMatch":
+        match_type = type(match).__name__
+
+        if match_type == "EEDivisionMatch":
             csv_name = "ee_divisions.csv"
             row_id_col = "division_id"
             row_value_col = "division_name"
-        elif type(match).__name__ == "YNRPartyMatch":
+        elif match_type == "YNRPartyMatch":
             csv_name = "ynr_parties.csv"
             row_id_col = "ec_id"
             row_value_col = "name"
-        elif type(match).__name__ == "YNRNameMatch":
+        elif match_type == "YNRNameMatch":
             csv_name = "ynr_names_plus.csv"
             row_id_col = "person_id"
             row_value_col = "person_name"
@@ -72,13 +74,10 @@ class CouncillorReconciler(CouncilMixin):
             match = results.match_for(input_field_value)
             if match:
                 match_class = matcher.match_class
-                obj_kwargs = {
-                    match_class.id_field: match.target.id,
-                    "match_backend": match.backend,
-                    "match_confidence": match.confidence,
-                }
-                match_obj = match_class(**obj_kwargs)
-                matches.append(match_obj)
+                match_obj = match_class(
+                    **{match_class.id_field: match.target.id}
+                )
+                matches.append((match_obj, match.backend, match.confidence))
             else:
                 print(
                     f"failed to reconcile {matcher.scraped_clr_field} for councillor: {clr}"

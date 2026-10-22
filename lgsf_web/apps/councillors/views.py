@@ -126,8 +126,8 @@ def summary_stats(qs):
             "label": label,
             "backends": list(
                 qs.filter(**{f"enriched__{key}__isnull": False})
-                .order_by(f"enriched__{key}__match_backend")
-                .values(backend=F(f"enriched__{key}__match_backend"))
+                .order_by(f"enriched__{key}_backend")
+                .values(backend=F(f"enriched__{key}_backend"))
                 .annotate(count=Count("id"))
             ),
             "filter_param": key,
