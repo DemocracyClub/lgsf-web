@@ -6,6 +6,60 @@
 
     <!-- TODO: not this -->
     <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --histogram-bar: #2a78d6;
+        }
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --histogram-bar: #3987e5;
+            }
+        }
+        [data-theme="dark"] {
+            --histogram-bar: #3987e5;
+        }
+
+        .histogram {
+            display: flex;
+            margin: 0;
+            padding: 0;
+            overflow-x: auto;
+        }
+        .histogram li {
+            flex: 1;
+            min-width: 2rem;
+            margin: 0;
+            list-style: none;
+            text-align: center;
+            font-size: 0.75rem;
+        }
+        .histogram .plot {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            height: 10rem;
+            /* The top padding is room for the tallest bar's count. The side
+               padding keeps a 2px gap between bars when months are narrow. */
+            padding: 1.25rem 1px 0;
+            border-bottom: 1px solid var(--pico-muted-border-color);
+        }
+        .histogram .bar {
+            position: relative;
+            width: 100%;
+            max-width: 24px;
+            border-radius: 4px 4px 0 0;
+            background: var(--histogram-bar);
+        }
+        .histogram .count {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .histogram .month {
+            color: var(--pico-muted-color);
+        }
+    </style>
 </head>
 <body>
     <main class="container">
@@ -13,6 +67,27 @@
         <h1>Decisions: {{ council.name }} ({{ council.code }})</h1>
 
         <p>{{ decisions|length }} decisions</p>
+
+        {% if months|length > 1 %}
+            <figure>
+                <figcaption>Decisions per month, by decision date</figcaption>
+                <ol class="histogram">
+                    {% for bucket in months %}
+                        <li title="{{ bucket.month|date:'F Y' }}: {{ bucket.count }} decision{{ bucket.count|pluralize }}">
+                            <div class="plot">
+                                <div class="bar" style="height: {{ bucket.percent|stringformat:'.1f' }}%">
+                                    <span class="count">{{ bucket.count }}</span>
+                                </div>
+                            </div>
+                            <div class="month">
+                                {{ bucket.month|date:"M" }}
+                                {% if forloop.first or bucket.month.month == 1 %}<br>{{ bucket.month|date:"Y" }}{% endif %}
+                            </div>
+                        </li>
+                    {% endfor %}
+                </ol>
+            </figure>
+        {% endif %}
 
         <table>
             <thead>

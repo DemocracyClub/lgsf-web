@@ -1,3 +1,4 @@
+import datetime
 import json
 from collections import defaultdict
 
@@ -7,7 +8,7 @@ from core.models import Chunk, Council, Decision, Document, Embedding
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
 from django.core.paginator import Paginator
 from django.db.models import Count, IntegerField, Model, OuterRef, Subquery
-from django.db.models.functions import Coalesce
+from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import DetailView, ListView
@@ -243,6 +244,35 @@ class CouncilDetailView(DetailView):
     queryset = councils_with_counts()
 
 
+def decisions_per_month(decisions):
+    """
+    A count for every month from the first decision to the last, including
+    months with none. `percent` is the count relative to the busiest month,
+    for drawing bars.
+    """
+    counts = dict(
+        decisions.exclude(raw_date=None)
+        .annotate(month=TruncMonth("raw_date"))
+        .values("month")
+        .annotate(count=Count("pk"))
+        .values_list("month", "count")
+    )
+    if not counts:
+        return []
+
+    busiest = max(counts.values())
+    month, last = min(counts), max(counts)
+    months = []
+    while month <= last:
+        count = counts.get(month, 0)
+        months.append(
+            {"month": month, "count": count, "percent": 100 * count / busiest}
+        )
+        # The 1st plus 32 days is always in the following month
+        month = (month + datetime.timedelta(days=32)).replace(day=1)
+    return months
+
+
 class CouncilDecisionListView(ListView):
     template_name = "core/council_decisions.html"
     context_object_name = "decisions"
@@ -258,4 +288,7 @@ class CouncilDecisionListView(ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["council"] = self.council
+        context["months"] = decisions_per_month(
+            Decision.objects.filter(council=self.council)
+        )
         return context
