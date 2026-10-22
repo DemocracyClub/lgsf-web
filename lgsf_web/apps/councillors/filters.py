@@ -50,6 +50,44 @@ class CompareFilterSet(filters.FilterSet):
         label="Council",
     )
 
+    matched_party_name = filters.CharFilter(
+        field_name="party_match__party_name",
+        lookup_expr="icontains",
+        label="Matched Party Name",
+    )
+    matched_division_name = filters.CharFilter(
+        field_name="division_match__division_name",
+        lookup_expr="icontains",
+        label="Matched Division Name",
+    )
+    matched_person_name = filters.CharFilter(
+        field_name="person_match__person_name",
+        lookup_expr="icontains",
+        label="Matched Person Name",
+    )
+
+    matched_party_id = filters.AllValuesFilter(
+        field_name="party_match__full_party_id",
+        lookup_expr="iexact",
+        label="Matched Party ID",
+    )
+
+    raw_party = filters.CharFilter(
+        field_name="base_councillor__raw_party",
+        lookup_expr="icontains",
+        label="Raw Party Name",
+    )
+    raw_division = filters.CharFilter(
+        field_name="base_councillor__raw_division",
+        lookup_expr="icontains",
+        label="Raw Division Name",
+    )
+    raw_person = filters.CharFilter(
+        field_name="base_councillor__raw_name",
+        lookup_expr="icontains",
+        label="Raw Person Name",
+    )
+
     name_match = filters.BooleanFilter(
         field_name="name_match",
         label="Missing Name?",
