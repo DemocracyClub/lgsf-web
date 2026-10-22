@@ -13,7 +13,6 @@
             {{ chunk.text|truncatewords:60|linebreaks }}
             <footer>
                 <a href="{{ chunk.document.s3_url }}" target="_blank">{{ chunk.document }}</a>
-                (chunk {{ chunk.chunk_index }} of {{ chunk.chunk_count }})
             </footer>
         </blockquote>
     {% endfor %}
