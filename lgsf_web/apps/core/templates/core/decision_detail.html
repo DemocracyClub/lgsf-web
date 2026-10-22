@@ -9,6 +9,8 @@
 </head>
 <body>
     <main class="container">
+        {% include "core/snippets/nav.html" %}
+
         <article>
             <h1>{{ decision.raw_title }}</h2>
             <p>{{ decision.text|linebreaks }}</p>
