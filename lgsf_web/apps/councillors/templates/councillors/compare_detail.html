@@ -31,20 +31,31 @@
           {% include "councillors/includes/match_row.html" with label="Party" raw=object.raw_party match=enriched.party_match value=enriched.party_match.party_name match_id=enriched.party_match.party_id backend=enriched.party_match_backend confidence=enriched.party_match_confidence synonym=enriched.party_synonym_match only %}
         </tbody>
       </table>
+      {% if enriched.elected_as %}
+      <details open>
+        <summary>Other Enriched data</summary>
+        <blockquote>
+        Party at election time:
+        {% if enriched.elected_as_id == enriched.party_match_id %}
+          <ins>{{ enriched.elected_as.party_name }}</ins>
+        {% else %}
+          <mark>{{ enriched.elected_as.party_name }}</mark>
+        {% endif %}
+        </blockquote>
+      </details>
+      {% endif %}
 
-      <details>
+      <details open>
         <summary>Other scraped data</summary>
-        <dl>
-          <dt>Email</dt><dd>{{ object.raw_email|default:"–" }}</dd>
-          <dt>Page</dt><dd>{% if object.url %}<a href="{{ object.url }}">{{ object.url }}</a>{% else %}–{% endif %}</dd>
-          <dt>Photo</dt><dd>{% if object.photo_url %}<a href="{{ object.photo_url }}">{{ object.photo_url }}</a>{% else %}–{% endif %}</dd>
-        </dl>
+        <blockquote>
+          <dl>
+            <dt>Email</dt><dd>{{ object.raw_email|default:"–" }}</dd>
+            <dt>Page</dt><dd>{% if object.url %}<a href="{{ object.url }}">{{ object.url }}</a>{% else %}–{% endif %}</dd>
+            <dt>Photo</dt><dd>{% if object.photo_url %}<a href="{{ object.photo_url }}">{{ object.photo_url }}</a>{% else %}–{% endif %}</dd>
+          </dl>
+        </blockquote>
       </details>
 
-      <p>
-        <a href="{% url 'councillors:scraped_detail' object.pk %}">Scraped detail</a>
-        | <a href="{% url 'councillors:enriched_detail' enriched.pk %}">Enriched detail</a>
-      </p>
     {% endwith %}
   </main>
 </body>

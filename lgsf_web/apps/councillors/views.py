@@ -108,6 +108,7 @@ class CompareDetailView(DetailView):
         "enriched__name_match",
         "enriched__division_match",
         "enriched__party_match",
+        "enriched__elected_as",
     )
     template_name = "councillors/compare_detail.html"
 
