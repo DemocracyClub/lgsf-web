@@ -1,4 +1,5 @@
 import django_filters as filters
+from core.models import Council
 from councillors.models import (
     EEDivisionMatch,
     EnrichedCouncillor,
@@ -43,11 +44,12 @@ def backend_filter(model, relation, label):
 
 
 class CompareFilterSet(filters.FilterSet):
-    council_id = filters.CharFilter(
-        field_name="base_councillor__council__code",
-        label="Council ID",
-        lookup_expr="iexact",
+    council_id = filters.ModelChoiceFilter(
+        queryset=Council.objects.all(),
+        field_name="base_councillor__council",
+        label="Council",
     )
+
     name_match = filters.BooleanFilter(
         field_name="name_match",
         label="Missing Name?",
