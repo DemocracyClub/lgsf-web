@@ -11,33 +11,36 @@
     <form method="get">
       {{ filter.form.non_field_errors }}
       {{ filter.form.council_id.as_field_group }}
-      <div>
-        <details>
-          <summary role="button" class="outline secondary">Enriched Fields</summary>
-          {{ filter.form.matched_party_name.as_field_group }}
-          {{ filter.form.matched_party_id.as_field_group }}
-          {{ filter.form.matched_division_name.as_field_group }}
-          {{ filter.form.matched_person_name.as_field_group }}
-        </details>
-      </div>
-      <div>
-        <details>
-          <summary role="button" class="outline secondary">Raw Fields</summary>
-          {{ filter.form.raw_party.as_field_group }}
-          {{ filter.form.raw_division.as_field_group }}
-          {{ filter.form.raw_person.as_field_group }}
-        </details>
-      </div>
-      <div class="grid">
-        {{ filter.form.name_match.as_field_group }}
-        {{ filter.form.division_match.as_field_group }}
-        {{ filter.form.party_match.as_field_group }}
-      </div>
-      <div class="grid">
-        {{ filter.form.name_backend.as_field_group }}
-        {{ filter.form.division_backend.as_field_group }}
-        {{ filter.form.party_backend.as_field_group }}
-      </div>
+      <details {% if filter.form.is_bound %}open{% endif %}>
+        <summary >More Filters</summary>
+        <div>
+          <details>
+            <summary role="button" class="outline secondary">Enriched Fields</summary>
+            {{ filter.form.matched_party_name.as_field_group }}
+            {{ filter.form.matched_party_id.as_field_group }}
+            {{ filter.form.matched_division_name.as_field_group }}
+            {{ filter.form.matched_person_name.as_field_group }}
+          </details>
+        </div>
+        <div>
+          <details>
+            <summary role="button" class="outline secondary">Raw Fields</summary>
+            {{ filter.form.raw_party.as_field_group }}
+            {{ filter.form.raw_division.as_field_group }}
+            {{ filter.form.raw_person.as_field_group }}
+          </details>
+        </div>
+        <div class="grid">
+          {{ filter.form.name_match.as_field_group }}
+          {{ filter.form.division_match.as_field_group }}
+          {{ filter.form.party_match.as_field_group }}
+        </div>
+        <div class="grid">
+          {{ filter.form.name_backend.as_field_group }}
+          {{ filter.form.division_backend.as_field_group }}
+          {{ filter.form.party_backend.as_field_group }}
+        </div>
+      </details>
       <input type="submit" />
       <a href="{% url 'councillors:compare_list' %}" role="button" class="secondary">Clear filters</a>
     </form>
