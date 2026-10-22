@@ -64,6 +64,28 @@ class EnrichedCouncillor(models.Model):
     name_match_backend = models.CharField(max_length=255, blank=True)
     name_match_confidence = models.FloatField(null=True, blank=True)
 
+    @property
+    def name_synonym_match(self):
+        return bool(
+            self.name_match_backend == "exact"
+            and self.base_councillor.raw_name != self.name_match.person_name
+        )
+
+    @property
+    def division_synonym_match(self):
+        return bool(
+            self.division_match_backend == "exact"
+            and self.base_councillor.raw_division
+            != self.division_match.division_name
+        )
+
+    @property
+    def party_synonym_match(self):
+        return bool(
+            self.party_match_backend == "exact"
+            and self.base_councillor.raw_party != self.party_match.party_name
+        )
+
     def __str__(self):
         return f"{self.base_councillor}-Enriched"
 
