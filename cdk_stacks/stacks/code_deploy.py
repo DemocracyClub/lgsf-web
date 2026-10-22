@@ -74,8 +74,8 @@ class CodeDeployment(Stack):
         role: iam.Role,
     ) -> ec2.LaunchTemplate:
         instance_types_per_env = {
-            "development": "t3a.medium",
-            "staging": "t3a.medium",
+            "development": "t3a.large",
+            "staging": "t3a.large",
             "production": "t3a.large",
         }
         return ec2.LaunchTemplate(
