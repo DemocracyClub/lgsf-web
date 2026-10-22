@@ -6,7 +6,7 @@ from django.utils.html import escape
 from django.utils.safestring import mark_safe
 from modelsearch import index
 from modelsearch.queryset import SearchableQuerySetMixin
-from pgvector.django import VectorField
+from pgvector.django import HnswIndex, VectorField
 
 
 class DecisionQuerySet(SearchableQuerySetMixin, models.QuerySet):
@@ -242,9 +242,18 @@ class Embedding(models.Model):
     )
     model = models.CharField(max_length=255)
     token_count = models.PositiveIntegerField()
-    # TODO: probably need a vector index: HNSW or IVFFlat
-    # come back to this
     embedding = VectorField(dimensions=1024)
+
+    class Meta:
+        indexes = (
+            HnswIndex(
+                name="embedding_hnsw_cosine_idx",
+                fields=["embedding"],
+                opclasses=["vector_cosine_ops"],
+                m=16,
+                ef_construction=64,
+            ),
+        )
 
     def __str__(self):
         return f"{self.model}: {self.chunk_id}"
