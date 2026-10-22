@@ -6,6 +6,7 @@ from councillors.models import (
     YNRPartyMatch,
 )
 from django.core.validators import EMPTY_VALUES
+from django.db.models import F
 from django.forms import CheckboxInput, CheckboxSelectMultiple
 
 
@@ -141,12 +142,26 @@ class CompareFilterSet(EnrichedCouncillorFilterSet):
         lookup_expr="isnull",
         widget=CheckboxInput(),
     )
+    party_differs_from_elected = filters.BooleanFilter(
+        label="Matched Party differs from Party at Election?",
+        method="filter_party_differs_from_elected",
+        widget=CheckboxInput(),
+    )
 
     division_backend = backend_filter(
         "division_match", "EE Division match backend"
     )
     party_backend = backend_filter("party_match", "Party match backend")
     name_backend = backend_filter("name_match", "Name match backend")
+
+    def filter_party_differs_from_elected(self, queryset, name, value):
+        # Rows missing either side are a separate problem, not a mismatch
+        both = queryset.filter(
+            party_match__isnull=False, elected_as__isnull=False
+        )
+        if value:
+            return both.exclude(party_match=F("elected_as"))
+        return both.filter(party_match=F("elected_as"))
 
     class Meta:
         model = EnrichedCouncillor

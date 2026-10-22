@@ -15,6 +15,7 @@
 {% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_name_match %}
 {% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_division_match %}
 {% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_party_match %}
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.party_differs_from_elected %}
       </fieldset>
       <details {% if filter.form.is_bound %}open{% endif %}>
         <summary >More Filters</summary>
@@ -71,7 +72,7 @@
                 {% include "councillors/includes/match_cell.html" with raw=scraped.raw_division match=enriched.division_match value=enriched.division_match.division_name backend=enriched.division_match_backend confidence=enriched.division_match_confidence synonym=enriched.division_synonym_match only %}
               </td>
               <td>
-                {% include "councillors/includes/match_cell.html" with raw=scraped.raw_party match=enriched.party_match value=enriched.party_match.party_name backend=enriched.party_match_backend confidence=enriched.party_match_confidence synonym=enriched.party_synonym_match only %}
+                {% include "councillors/includes/match_cell.html" with raw=scraped.raw_party match=enriched.party_match value=enriched.party_match.party_name backend=enriched.party_match_backend confidence=enriched.party_match_confidence synonym=enriched.party_synonym_match elected_as=enriched.elected_as only %}
               </td>
               <td>
                 <small>

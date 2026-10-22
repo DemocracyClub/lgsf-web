@@ -12,3 +12,6 @@
     {% if synonym %} synonyms {% else %}{{ backend|default:"unknown backend" }}{% endif %}{% if confidence is None %}{% else %} · {{ confidence|floatformat:2 }}{% endif %}
   </small>
 {% endif %}
+{% if elected_as and elected_as.pk != match.pk %}
+  <br><small><mark>elected as {{ elected_as.party_name }}</mark></small>
+{% endif %}

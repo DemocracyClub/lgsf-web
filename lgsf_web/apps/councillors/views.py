@@ -75,6 +75,7 @@ class CompareListView(FilterView):
         "division_match",
         "party_match",
         "name_match",
+        "elected_as",
     ).order_by(
         "base_councillor__council_id",
         NullIf("name_match__person_name", Value("")).asc(nulls_last=True),
