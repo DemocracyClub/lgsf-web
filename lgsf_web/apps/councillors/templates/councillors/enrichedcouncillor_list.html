@@ -8,10 +8,18 @@
 </head>
 <body>
   <main class="container">
-    <h1>Enriched councillors</h1>
     <form method="get">
-      {{ filter.form.as_p }}
+      {{ filter.form.non_field_errors }}
+      {{ filter.form.council_id.as_field_group }}
+      <details {% if filter.form.is_bound %}open{% endif %}>
+        <summary >More Filters</summary>
+        {{ filter.form.matched_party_name.as_field_group }}
+        {{ filter.form.matched_party_id.as_field_group }}
+        {{ filter.form.matched_division_name.as_field_group }}
+        {{ filter.form.matched_person_name.as_field_group }}
+      </details>
       <input type="submit" />
+      <a href="{% url 'councillors:enriched_list' %}" role="button" class="secondary">Clear filters</a>
     </form>
       <div class="pagination">
         Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ paginator.count }}
@@ -23,7 +31,7 @@
           <th>Scraped name</th>
           <th>YNR name</th>
           <th>Division</th>
-          <th>Party ID</th>
+          <th>Party</th>
           <th>Compare</th>
         </tr>
       </thead>

@@ -1,6 +1,10 @@
 import django_filters as filters
 from core.models import Council
-from councillors.models import EnrichedCouncillor, YNRPartyMatch
+from councillors.models import (
+    EnrichedCouncillor,
+    ScrapedCouncillor,
+    YNRPartyMatch,
+)
 from django.core.validators import EMPTY_VALUES
 from django.forms import CheckboxSelectMultiple, RadioSelect
 
@@ -40,7 +44,35 @@ def backend_filter(relation, label):
     )
 
 
-class CompareFilterSet(filters.FilterSet):
+class ScrapedCouncillorFilterSet(filters.FilterSet):
+    council_id = filters.ModelChoiceFilter(
+        queryset=Council.objects.all(),
+        field_name="council",
+        label="Council",
+    )
+
+    raw_party = filters.CharFilter(
+        field_name="raw_party",
+        lookup_expr="icontains",
+        label="Raw Party Name",
+    )
+    raw_division = filters.CharFilter(
+        field_name="raw_division",
+        lookup_expr="icontains",
+        label="Raw Division Name",
+    )
+    raw_person = filters.CharFilter(
+        field_name="raw_name",
+        lookup_expr="icontains",
+        label="Raw Person Name",
+    )
+
+    class Meta:
+        model = ScrapedCouncillor
+        fields = []  # noqa: RUF012
+
+
+class EnrichedCouncillorFilterSet(filters.FilterSet):
     council_id = filters.ModelChoiceFilter(
         queryset=Council.objects.all(),
         field_name="base_councillor__council",
@@ -69,6 +101,12 @@ class CompareFilterSet(filters.FilterSet):
         label="Matched Party ID",
     )
 
+    class Meta:
+        model = EnrichedCouncillor
+        fields = []  # noqa: RUF012
+
+
+class CompareFilterSet(EnrichedCouncillorFilterSet):
     raw_party = filters.CharFilter(
         field_name="base_councillor__raw_party",
         lookup_expr="icontains",

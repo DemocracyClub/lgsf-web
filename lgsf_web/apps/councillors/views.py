@@ -1,7 +1,11 @@
 from typing import Any
 
 from core.models import Council
-from councillors.filters import CompareFilterSet
+from councillors.filters import (
+    CompareFilterSet,
+    EnrichedCouncillorFilterSet,
+    ScrapedCouncillorFilterSet,
+)
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
 from django.db.models import Count, F, FloatField, Q, Value
 from django.db.models.functions import Cast, NullIf
@@ -13,7 +17,7 @@ from django_filters.views import FilterView
 class ScrapedCouncillorListView(FilterView):
     model = ScrapedCouncillor
     queryset = ScrapedCouncillor.objects.select_related("enriched")
-    filterset_fields = ["council"]  # noqa: RUF012
+    filterset_class = ScrapedCouncillorFilterSet
     paginate_by = 100
     template_name = "councillors/scrapedcouncillor_list.html"
 
@@ -42,7 +46,7 @@ class EnrichedCouncillorListView(FilterView):
         "party_match",
         "name_match",
     )
-    filterset_fields = ["base_councillor__council"]  # noqa: RUF012
+    filterset_class = EnrichedCouncillorFilterSet
     paginate_by = 100
     template_name = "councillors/enrichedcouncillor_list.html"
 
