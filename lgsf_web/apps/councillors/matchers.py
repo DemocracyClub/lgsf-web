@@ -7,9 +7,11 @@ from councillors.models import EEDivisionMatch, YNRNameMatch, YNRPartyMatch
 from dc_name_matching import (
     BaseMatcher,
     CaseInsensitiveMatch,
-    CleanedMatch,
-    ExactMatch,
     # JevMatch,
+    CleanedFirstWordLastWordMatch,
+    CleanedMatch,
+    DehyphenedCleanedMatch,
+    ExactMatch,
     ManyToOneMatcher,
     MatchBackend,
     Target,
@@ -65,7 +67,6 @@ class BaseCouncillorMatcher(CouncilMixin, metaclass=abc.ABCMeta):
         return matcher
 
 
-
 class CouncillorDivisionMatcher(BaseCouncillorMatcher):
     matcher_type = ManyToOneMatcher
     match_class = EEDivisionMatch
@@ -78,6 +79,7 @@ class CouncillorDivisionMatcher(BaseCouncillorMatcher):
             ExactMatch(),
             CaseInsensitiveMatch(),
             CleanedMatch(),
+            DehyphenedCleanedMatch(),
             # JevMatch(),
         ]
 
@@ -144,6 +146,7 @@ class CouncillorNameMatcher(BaseCouncillorMatcher):
             ExactMatch(),
             CaseInsensitiveMatch(),
             CleanedMatch(),
+            CleanedFirstWordLastWordMatch(),
             # JevMatch(),
         ]
 
