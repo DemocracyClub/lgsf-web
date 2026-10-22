@@ -1,7 +1,11 @@
 from typing import Any
 
 from core.models import Council
-from councillors.filters import CompareFilterSet
+from councillors.filters import (
+    CompareFilterSet,
+    EnrichedCouncillorFilterSet,
+    ScrapedCouncillorFilterSet,
+)
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
 from django.db.models import Count, F, FloatField, Q, Value
 from django.db.models.functions import Cast, NullIf
@@ -13,7 +17,7 @@ from django_filters.views import FilterView
 class ScrapedCouncillorListView(FilterView):
     model = ScrapedCouncillor
     queryset = ScrapedCouncillor.objects.select_related("enriched")
-    filterset_fields = ["council"]  # noqa: RUF012
+    filterset_class = ScrapedCouncillorFilterSet
     paginate_by = 100
     template_name = "councillors/scrapedcouncillor_list.html"
 
@@ -42,7 +46,7 @@ class EnrichedCouncillorListView(FilterView):
         "party_match",
         "name_match",
     )
-    filterset_fields = ["base_councillor__council"]  # noqa: RUF012
+    filterset_class = EnrichedCouncillorFilterSet
     paginate_by = 100
     template_name = "councillors/enrichedcouncillor_list.html"
 
@@ -71,6 +75,7 @@ class CompareListView(FilterView):
         "division_match",
         "party_match",
         "name_match",
+        "elected_as",
     ).order_by(
         "base_councillor__council_id",
         NullIf("name_match__person_name", Value("")).asc(nulls_last=True),
@@ -98,7 +103,13 @@ class CompareDetailView(DetailView):
 
     queryset = ScrapedCouncillor.objects.filter(
         enriched__isnull=False
-    ).select_related("enriched")
+    ).select_related(
+        "enriched",
+        "enriched__name_match",
+        "enriched__division_match",
+        "enriched__party_match",
+        "enriched__elected_as",
+    )
     template_name = "councillors/compare_detail.html"
 
 
@@ -126,11 +137,11 @@ def summary_stats(qs):
             "label": label,
             "backends": list(
                 qs.filter(**{f"enriched__{key}__isnull": False})
-                .order_by(f"enriched__{key}__match_backend")
-                .values(backend=F(f"enriched__{key}__match_backend"))
+                .order_by(f"enriched__{key}_backend")
+                .values(backend=F(f"enriched__{key}_backend"))
                 .annotate(count=Count("id"))
             ),
-            "filter_param": key,
+            "filter_param": f"missing_{key}",
             "backend_param": key.replace("_match", "_backend"),
             "complete": counts[key],
             "percent": round(100 * counts[key] / total, 1) if total else 0,

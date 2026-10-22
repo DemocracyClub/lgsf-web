@@ -8,13 +8,55 @@
 <body>
   <main class="container">
     <p><a href="{% url 'councillors:compare_list' %}">&larr; All comparisons</a></p>
-    <h1>{{ object.raw_name }}</h1>
-    <p>Council: {{ object.council_id }}</p>
-    {% include "councillors/includes/field_comparison_table.html" with scraped=object enriched=object.enriched only %}
-    <p>
-      <a href="{% url 'councillors:scraped_detail' object.pk %}">Scraped detail</a>
-      | <a href="{% url 'councillors:enriched_detail' object.enriched.pk %}">Enriched detail</a>
-    </p>
+    <hgroup>
+      <h1>{{ object.raw_name }}</h1>
+      <p>{{ object.council_id }}{% if object.raw_identifier %} · {{ object.raw_identifier }}{% endif %}</p>
+    </hgroup>
+
+    {% with enriched=object.enriched %}
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th>Scraped</th>
+            <th>Matched</th>
+            <th>ID</th>
+            <th>Backend</th>
+            <th>Confidence</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% include "councillors/includes/match_row.html" with label="Name" raw=object.raw_name match=enriched.name_match value=enriched.name_match.person_name match_id=enriched.name_match.person_id backend=enriched.name_match_backend confidence=enriched.name_match_confidence synonym=enriched.name_synonym_match only %}
+          {% include "councillors/includes/match_row.html" with label="Division" raw=object.raw_division match=enriched.division_match value=enriched.division_match.division_name match_id=enriched.division_match.division_id backend=enriched.division_match_backend confidence=enriched.division_match_confidence synonym=enriched.division_synonym_match only %}
+          {% include "councillors/includes/match_row.html" with label="Party" raw=object.raw_party match=enriched.party_match value=enriched.party_match.party_name match_id=enriched.party_match.party_id backend=enriched.party_match_backend confidence=enriched.party_match_confidence synonym=enriched.party_synonym_match only %}
+        </tbody>
+      </table>
+      {% if enriched.elected_as %}
+      <details open>
+        <summary>Other Enriched data</summary>
+        <blockquote>
+        Party at election time:
+        {% if enriched.elected_as_id == enriched.party_match_id %}
+          <ins>{{ enriched.elected_as.party_name }}</ins>
+        {% else %}
+          <mark>{{ enriched.elected_as.party_name }}</mark>
+        {% endif %}
+        </blockquote>
+      </details>
+      {% endif %}
+
+      <details open>
+        <summary>Other scraped data</summary>
+        <blockquote>
+          <dl>
+            <dt>Email</dt><dd>{{ object.raw_email|default:"–" }}</dd>
+            <dt>Page</dt><dd>{% if object.url %}<a href="{{ object.url }}">{{ object.url }}</a>{% else %}–{% endif %}</dd>
+            <dt>Photo</dt><dd>{% if object.photo_url %}<a href="{{ object.photo_url }}">{{ object.photo_url }}</a>{% else %}–{% endif %}</dd>
+          </dl>
+        </blockquote>
+      </details>
+
+    {% endwith %}
   </main>
 </body>
 </html>

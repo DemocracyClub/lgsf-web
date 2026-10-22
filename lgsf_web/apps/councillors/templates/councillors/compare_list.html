@@ -9,7 +9,39 @@
   <main class="container">
     <h1>Compare councillors</h1>
     <form method="get">
-      {{ filter.form.as_p }}
+      {{ filter.form.non_field_errors }}
+      {{ filter.form.council_id.as_field_group }}
+      <fieldset>
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_name_match %}
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_division_match %}
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_party_match %}
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.party_differs_from_elected %}
+      </fieldset>
+      <details {% if filter.form.is_bound %}open{% endif %}>
+        <summary >More Filters</summary>
+        <div>
+          <details>
+            <summary role="button" class="outline secondary">Enriched Fields</summary>
+            {{ filter.form.matched_party_name.as_field_group }}
+            {{ filter.form.matched_party_id.as_field_group }}
+            {{ filter.form.matched_division_name.as_field_group }}
+            {{ filter.form.matched_person_name.as_field_group }}
+          </details>
+        </div>
+        <div>
+          <details>
+            <summary role="button" class="outline secondary">Raw Fields</summary>
+            {{ filter.form.raw_party.as_field_group }}
+            {{ filter.form.raw_division.as_field_group }}
+            {{ filter.form.raw_person.as_field_group }}
+          </details>
+        </div>
+        <div class="grid">
+          {{ filter.form.name_backend.as_field_group }}
+          {{ filter.form.division_backend.as_field_group }}
+          {{ filter.form.party_backend.as_field_group }}
+        </div>
+      </details>
       <input type="submit" />
       <a href="{% url 'councillors:compare_list' %}" role="button" class="secondary">Clear filters</a>
     </form>
@@ -20,35 +52,53 @@
       <thead>
         <tr>
           <th>Council</th>
-          <th>Field Comparisons</th>
-          <th>Links</th>
+          <th>Name</th>
+          <th>Division</th>
+          <th>Party</th>
+          <th>Ext. Links</th>
         </tr>
       </thead>
       <tbody>
         {% for enriched in object_list %}
           {% with scraped=enriched.base_councillor %}
             <tr>
-              <td>{{ scraped.council_id }}</td>
               <td>
-                {% include "councillors/includes/field_comparison_table.html" with scraped=scraped enriched=enriched only %}
+              {{ scraped.council_id }}
               </td>
               <td>
-                <ul>
+                {% include "councillors/includes/match_cell.html" with raw=scraped.raw_name match=enriched.name_match value=enriched.name_match.person_name backend=enriched.name_match_backend confidence=enriched.name_match_confidence synonym=enriched.name_synonym_match only %}
+              </td>
+              <td>
+                {% include "councillors/includes/match_cell.html" with raw=scraped.raw_division match=enriched.division_match value=enriched.division_match.division_name backend=enriched.division_match_backend confidence=enriched.division_match_confidence synonym=enriched.division_synonym_match only %}
+              </td>
+              <td>
+                {% include "councillors/includes/match_cell.html" with raw=scraped.raw_party match=enriched.party_match value=enriched.party_match.party_name backend=enriched.party_match_backend confidence=enriched.party_match_confidence synonym=enriched.party_synonym_match elected_as=enriched.elected_as only %}
+              </td>
+              <td>
+                <small>
+                  <ul>
+                  {% if enriched.party_match.wcivf_link %}
                   <li>
-                    <a href="{% url 'councillors:scraped_detail' scraped.id %}">View Scraped</a>
+                    <a href="{{ enriched.party_match.wcivf_link }}">Party</a>
                   </li>
+                  {% endif %}
+                  {% if enriched.division_match.ee_link %}
                   <li>
-                    <a href="{% url 'councillors:enriched_detail' enriched.id %}">View Enriched</a>
+                    <a href="{{ enriched.division_match.ee_link }}">Divset</a>
                   </li>
+                  {% endif %}
+                  {% if enriched.name_match.ynr_link %}
                   <li>
-                    <a href="{% url 'councillors:compare_detail' scraped.id %}">Compare</a>
+                    <a href="{{ enriched.name_match.ynr_link }}">YNR</a>
                   </li>
-                </ul>
+                  {% endif %}
+                  </ul>
+                </small>
               </td>
             </tr>
           {% endwith %}
         {% empty %}
-          <tr><td colspan="8">No enriched councillors to compare.</td></tr>
+          <tr><td colspan="4">No enriched councillors to compare.</td></tr>
         {% endfor %}
       </tbody>
     </table>

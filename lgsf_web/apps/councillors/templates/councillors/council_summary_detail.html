@@ -10,14 +10,19 @@
     <p><a href="{% url 'councillors:summary_list' %}">&laquo; All councils</a></p>
     <h1>Summary: {{ council.name }} ({{ council.code }})</h1>
     <p>
-      {{ total }} scraped councillors, {{ no_enriched }} without an enriched record
-      (these count as incomplete for every field).
+      {{ total }} scraped councillors.
     </p>
-    <ul>
-      <li><a href="{% url 'councillors:scraped_list' %}?council={{ council_id|urlencode }}">View Scraped councillors</a></li>
-      <li><a href="{% url 'councillors:enriched_list' %}?base_councillor__council={{ council_id|urlencode }}">View Enriched councillors</a></li>
-    </ul>
+    <h3>
+      Field Matching Statistics:
+    </h3>
     {% include "councillors/includes/summary_stats_table.html" %}
+    <h3>
+      Councillor Data:
+    </h3>
+    <ul>
+      <li><a href="{% url 'councillors:scraped_list' %}?council={{ council_id|urlencode }}">View Scraped Councillor Data</a></li>
+      <li><a href="{% url 'councillors:compare_list' %}?council_id={{ council_id|urlencode }}">View Enriched Councillor Data</a></li>
+    </ul>
   </main>
 </body>
 </html>

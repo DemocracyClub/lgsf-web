@@ -2,7 +2,12 @@ import csv
 
 from councillors.constants import DATA_DIR
 from councillors.mixins import CouncilMixin
-from councillors.models import EnrichedCouncillor
+from councillors.models import (
+    EEDivisionMatch,
+    EnrichedCouncillor,
+    YNRNameMatch,
+    YNRPartyMatch,
+)
 from django.db import transaction
 
 
@@ -17,41 +22,48 @@ class CouncillorReconciler(CouncilMixin):
 
     def reconcile(self):
         councillors = self.get_scraped_councillors(self.council_id)
-        clr_to_match_objs = {clr: [] for clr in councillors}
+        clr_to_matches = {clr: [] for clr in councillors}
 
         for matcher in self.matchers:
-            self._get_clr_matches(clr_to_match_objs, matcher)
+            self._get_clr_matches(clr_to_matches, matcher)
 
         with transaction.atomic():
-            for clr, matches in clr_to_match_objs.items():
-                enriched, _ = EnrichedCouncillor.objects.update_or_create(
+            for clr, matches in clr_to_matches.items():
+                enriched, _ = EnrichedCouncillor.objects.get_or_create(
                     base_councillor=clr,
                 )
 
-                for match in matches:
+                for match, backend, confidence in matches:
                     self._enrich_matches_with_csv_data(match)
-                    match_class = type(match)
                     defaults = {
-                        match.id_field: getattr(match, match.id_field),
-                        match.value_field: getattr(match, match.value_field),
-                        "match_backend": match.match_backend,
-                        "match_confidence": match.match_confidence,
+                        match.value_field: getattr(match, match.value_field)
                     }
-                    match_class.objects.update_or_create(
-                        councillor=enriched,
+                    if isinstance(match, EEDivisionMatch):
+                        defaults["divisionset_id"] = match.divisionset_id
+                    lookup, _ = type(match).objects.update_or_create(
+                        **{match.id_field: getattr(match, match.id_field)},
                         defaults=defaults,
                     )
+                    if isinstance(match, YNRNameMatch):
+                        enriched.elected_as = self._get_elected_as(match)
+                    field = match.enriched_field
+                    setattr(enriched, field, lookup)
+                    setattr(enriched, f"{field}_backend", backend)
+                    setattr(enriched, f"{field}_confidence", confidence)
+                enriched.save()
 
     def _enrich_matches_with_csv_data(self, match):
-        if type(match).__name__ == "EEDivisionMatch":
+        match_type = type(match).__name__
+
+        if match_type == "EEDivisionMatch":
             csv_name = "ee_divisions.csv"
             row_id_col = "division_id"
             row_value_col = "division_name"
-        elif type(match).__name__ == "YNRPartyMatch":
+        elif match_type == "YNRPartyMatch":
             csv_name = "ynr_parties.csv"
             row_id_col = "ec_id"
             row_value_col = "name"
-        elif type(match).__name__ == "YNRNameMatch":
+        elif match_type == "YNRNameMatch":
             csv_name = "ynr_names_plus.csv"
             row_id_col = "person_id"
             row_value_col = "person_name"
@@ -61,9 +73,38 @@ class CouncillorReconciler(CouncilMixin):
         with open(DATA_DIR / csv_name) as f:
             reader = csv.DictReader(f)
             for row in reader:
-                if row[row_id_col] == getattr(match, match.id_field):
+                if row[row_id_col] == str(getattr(match, match.id_field)):
                     setattr(match, match.value_field, row[row_value_col])
+                    if match_type == "EEDivisionMatch":
+                        match.divisionset_id = row["divisionset_id"] or None
                     break
+
+    def _get_elected_as(self, name_match):
+        """
+        Find the party the person was elected as, from their most recent
+        election row in ynr_names_plus.csv.
+        """
+        latest_row = None
+        with open(DATA_DIR / "ynr_names_plus.csv") as f:
+            for row in csv.DictReader(f):
+                if row["person_id"] != str(name_match.person_id):
+                    continue
+                # ISO dates compare correctly as strings
+                if (
+                    latest_row is None
+                    or row["election_date"] > latest_row["election_date"]
+                ):
+                    latest_row = row
+        if latest_row is None:
+            return None
+        party_id = latest_row["party_id"].removeprefix("PP")
+        if not party_id:
+            return None
+        party, _ = YNRPartyMatch.objects.get_or_create(
+            party_id=party_id,
+            defaults={"party_name": latest_row["party_name"]},
+        )
+        return party
 
     def _get_clr_matches(self, clr_to_match_objs, matcher):
         results = matcher.match()
@@ -72,13 +113,10 @@ class CouncillorReconciler(CouncilMixin):
             match = results.match_for(input_field_value)
             if match:
                 match_class = matcher.match_class
-                obj_kwargs = {
-                    match_class.id_field: match.target.id,
-                    "match_backend": match.backend,
-                    "match_confidence": match.confidence,
-                }
-                match_obj = match_class(**obj_kwargs)
-                matches.append(match_obj)
+                match_obj = match_class(
+                    **{match_class.id_field: match.target.id}
+                )
+                matches.append((match_obj, match.backend, match.confidence))
             else:
                 print(
                     f"failed to reconcile {matcher.scraped_clr_field} for councillor: {clr}"

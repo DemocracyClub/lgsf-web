@@ -34,57 +34,118 @@ class EnrichedCouncillor(models.Model):
         related_name="enriched",
     )
 
+    elected_as = models.ForeignKey(
+        "YNRPartyMatch",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="elected_councillors",
+    )
+
+    party_match = models.ForeignKey(
+        "YNRPartyMatch",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="councillors",
+    )
+    party_match_backend = models.CharField(max_length=255, blank=True)
+    party_match_confidence = models.FloatField(null=True, blank=True)
+
+    division_match = models.ForeignKey(
+        "EEDivisionMatch",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="councillors",
+    )
+    division_match_backend = models.CharField(max_length=255, blank=True)
+    division_match_confidence = models.FloatField(null=True, blank=True)
+
+    name_match = models.ForeignKey(
+        "YNRNameMatch",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="councillors",
+    )
+    name_match_backend = models.CharField(max_length=255, blank=True)
+    name_match_confidence = models.FloatField(null=True, blank=True)
+
+    @property
+    def name_synonym_match(self):
+        return bool(
+            self.name_match_backend == "exact"
+            and self.base_councillor.raw_name != self.name_match.person_name
+        )
+
+    @property
+    def division_synonym_match(self):
+        return bool(
+            self.division_match_backend == "exact"
+            and self.base_councillor.raw_division
+            != self.division_match.division_name
+        )
+
+    @property
+    def party_synonym_match(self):
+        return bool(
+            self.party_match_backend == "exact"
+            and self.base_councillor.raw_party != self.party_match.party_name
+        )
+
     def __str__(self):
         return f"{self.base_councillor}-Enriched"
 
 
 class BaseMatch(models.Model):
-    match_backend = models.CharField(max_length=255, blank=True)
-    match_confidence = models.FloatField(null=True, blank=True)
-
-    def councillor_match_field(related_name: str):
-        return models.OneToOneField(
-            EnrichedCouncillor,
-            on_delete=models.CASCADE,
-            related_name=related_name,
-        )
-
+    # Shared lookup row; per-councillor backend/confidence live on EnrichedCouncillor
     def __str__(self):
         id = getattr(self, self.id_field)
         value = getattr(self, self.value_field)
-        return f"{id} - {value}"
+        return f"{value} ({id})"
 
     class Meta:
         abstract = True
 
 
 class EEDivisionMatch(BaseMatch):
+    enriched_field = "division_match"
     id_field = "division_id"
     value_field = "division_name"
-    clr_related_name = "division_match"
-    councillor = BaseMatch.councillor_match_field(clr_related_name)
 
-    division_id = models.IntegerField(null=True, blank=True)
+    division_id = models.IntegerField(unique=True)
     division_name = models.CharField(max_length=255, blank=True)
+    divisionset_id = models.IntegerField(null=True, blank=True)
+
+    @property
+    def ee_link(self):
+        return f"https://elections.democracyclub.org.uk/organisations/divisionsets/{self.divisionset_id}/"
 
 
 class YNRPartyMatch(BaseMatch):
+    enriched_field = "party_match"
     id_field = "party_id"
     value_field = "party_name"
-    clr_related_name = "party_match"
 
-    councillor = BaseMatch.councillor_match_field(clr_related_name)
-
-    party_id = models.CharField(max_length=255, blank=True)
+    party_id = models.CharField(max_length=255, unique=True)
     party_name = models.CharField(max_length=255, blank=True)
+
+    @property
+    def wcivf_link(self):
+        return f"https://whocanivotefor.co.uk/parties/party:{self.party_id}"
 
 
 class YNRNameMatch(BaseMatch):
+    enriched_field = "name_match"
     id_field = "person_id"
     value_field = "person_name"
-    clr_related_name = "name_match"
 
-    councillor = BaseMatch.councillor_match_field(clr_related_name)
-
-    person_id = models.IntegerField(null=True, blank=True)
+    person_id = models.IntegerField(unique=True)
     person_name = models.CharField(max_length=255, blank=True)
+
+    @property
+    def ynr_link(self):
+        return (
+            f"https://candidates.democracyclub.org.uk/person/{self.person_id}"
+        )

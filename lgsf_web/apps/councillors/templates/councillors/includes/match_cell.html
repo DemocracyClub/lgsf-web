@@ -1,0 +1,17 @@
+{% if not match %}
+  {{ raw }}<br>
+  <mark>no match</mark>
+{% else %}
+  {% if raw|lower == value|lower %}
+    {{ raw }}
+  {% else %}
+    <del>{{ raw }}</del> → <strong>{{ value }}</strong>
+  {% endif %}
+  <br>
+  <small {% if confidence is not None and confidence < 0.8 %}style="color: var(--pico-del-color);"{% endif %}>
+    {% if synonym %} synonyms {% else %}{{ backend|default:"unknown backend" }}{% endif %}{% if confidence is None %}{% else %} · {{ confidence|floatformat:2 }}{% endif %}
+  </small>
+{% endif %}
+{% if elected_as and elected_as.pk != match.pk %}
+  <br><small><mark>elected as {{ elected_as.party_name }}</mark></small>
+{% endif %}

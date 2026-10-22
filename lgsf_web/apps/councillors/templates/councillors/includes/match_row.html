@@ -1,0 +1,26 @@
+<tr>
+  <th scope="row">{{ label }}</th>
+  <td>{{ raw }}</td>
+  {% if match %}
+    <td>
+      {% if raw|lower == value|lower %}
+        <ins>{{ value }}</ins>
+      {% else %}
+        <strong>{{ value }}</strong>
+      {% endif %}
+    </td>
+    <td><code>{{ match_id }}</code></td>
+    <td>{% if synonym %} synonyms {% else %}{{ backend|default:"unknown backend" }}{% endif %}</td>
+    <td>
+      {% if confidence is None %}
+        –
+      {% elif confidence < 0.8 %}
+        <mark>{{ confidence|floatformat:2 }}</mark>
+      {% else %}
+        {{ confidence|floatformat:2 }}
+      {% endif %}
+    </td>
+  {% else %}
+    <td colspan="4"><mark>no match</mark></td>
+  {% endif %}
+</tr>
