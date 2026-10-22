@@ -122,6 +122,7 @@ class EEDivisionMatch(BaseMatch):
     def ee_link(self):
         return f"https://elections.democracyclub.org.uk/organisations/divisionsets/{self.divisionset_id}/"
 
+
 class YNRPartyMatch(BaseMatch):
     enriched_field = "party_match"
     id_field = "party_id"
