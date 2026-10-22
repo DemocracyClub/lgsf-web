@@ -13,6 +13,15 @@ class DecisionQuerySet(SearchableQuerySetMixin, models.QuerySet):
     pass
 
 
+class DocumentManager(models.Manager):
+    # Also applies to related managers (decision.documents) and prefetches,
+    # but not select_related: defer "document__text" there.
+    # I reckon we will probably want to delete "text"
+    # but for now, just defer it by default
+    def get_queryset(self):
+        return super().get_queryset().defer("text")
+
+
 class ChunkQuerySet(SearchableQuerySetMixin, models.QuerySet):
     pass
 
@@ -110,6 +119,8 @@ class Document(models.Model):
 
     # TODO: probably delete
     text = models.TextField(blank=True)
+
+    objects = DocumentManager()
 
     class Meta:
         constraints = (

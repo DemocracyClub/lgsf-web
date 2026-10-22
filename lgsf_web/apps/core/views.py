@@ -43,9 +43,9 @@ def fused_decision_search(decisions, chunks, query, vector_chunks=()):
     """
     decision_hits = list(decisions.search(query)[:DECISION_SEARCH_LIMIT])
     fts_chunks = list(
-        chunks.select_related("document__decision").search(query)[
-            :CHUNK_SEARCH_LIMIT
-        ]
+        chunks.select_related("document__decision")
+        .defer("document__text")
+        .search(query)[:CHUNK_SEARCH_LIMIT]
     )
     chunk_hits = fuse_chunks(fts_chunks, vector_chunks)
 
@@ -101,7 +101,7 @@ def decision_search(request):
                 embeddings = form.filter(
                     Embedding.objects.select_related(
                         "chunk__document__decision"
-                    ),
+                    ).defer("chunk__document__text"),
                     prefix="chunk__document__decision__",
                 )
                 vector_chunks = [

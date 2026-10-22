@@ -99,9 +99,7 @@ class Command(BaseCommand):
     def find_document(content_hash, cache):
         if content_hash not in cache:
             matches = list(
-                Document.objects.filter(content_hash=content_hash).defer(
-                    "text"
-                )[:2]
+                Document.objects.filter(content_hash=content_hash)[:2]
             )
             if len(matches) != 1:
                 logger.warning(

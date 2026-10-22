@@ -195,8 +195,7 @@ class Command(BaseCommand):
             and "etag" in doc
         ]
 
-        # defer text so unchanged documents don't load their (large) extracted text
-        existing = {d.storage_key: d for d in decision.documents.defer("text")}
+        existing = {d.storage_key: d for d in decision.documents.all()}
 
         to_create = []
         imported = 0
