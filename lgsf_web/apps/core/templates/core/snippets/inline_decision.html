@@ -1,12 +1,21 @@
 <article>
     <h3><a href="{% url 'core:decision-detail' decision.pk %}">{{ decision.raw_title }}</a></h3>
     <dl>
-      <dt>council</dt>
+      <dt>Council</dt>
       <dd>{{ decision.council }}</dd>
-      <dt>purpose</dt>
-      <dd>{{ decision.purpose }}</dd>
-      <dt>status</dt>
+      <dt>Purpose</dt>
+      <dd>{{ decision.purpose|linebreaks }}</dd>
+      <dt>Status</dt>
       <dd>{{ decision.status }}</dd>
     </dl>
+    {% for chunk in decision.matched_chunks %}
+        <blockquote>
+            {{ chunk.text|truncatewords:60|linebreaks }}
+            <footer>
+                <a href="{{ chunk.document.s3_url }}" target="_blank">{{ chunk.document }}</a>
+                (chunk {{ chunk.chunk_index }} of {{ chunk.chunk_count }})
+            </footer>
+        </blockquote>
+    {% endfor %}
     <footer>{{ decision.publication_date }}</footer>
 </article>

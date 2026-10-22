@@ -24,34 +24,26 @@
 
             <h2>Meta</h2>
             <dl>
-                <dt>council</dt>
+                <dt>Council</dt>
                 <dd>{{ decision.council }}</dd>
-                <dt>raw_identifier</dt>
-                <dd>{{ decision.raw_identifier }}</dd>
-                <dt>raw_date</dt>
-                <dd>{{ decision.raw_date }}</dd>
-                <dt>raw_decision_maker</dt>
-                <dd>{{ decision.raw_decision_maker }}</dd>
-                <dt>publication_date</dt>
-                <dd>{{ decision.publication_date }}</dd>
-                <dt>purpose</dt>
-                <dd>{{ decision.purpose }}</dd>
-                <dt>status</dt>
-                <dd>{{ decision.status }}</dd>
                 <dt>url</dt>
-                <dd>{{ decision.url }}</dd>
+                <dd><a href="{{ decision.url }}">{{ decision.url }}</a></dd>
+                <dt>Date</dt>
+                <dd>{{ decision.raw_date }}</dd>
+                <dt>Decision Maker</dt>
+                <dd>{{ decision.raw_decision_maker }}</dd>
+                <dt>Publication Date</dt>
+                <dd>{{ decision.publication_date }}</dd>
+                <dt>Purpose</dt>
+                <dd>{{ decision.purpose|linebreaks }}</dd>
+                <dt>Status</dt>
+                <dd>{{ decision.status }}</dd>
                 <dt>is_key_decision</dt>
                 <dd>{{ decision.is_key_decision }}</dd>
                 <dt>is_officer_decision</dt>
                 <dd>{{ decision.is_officer_decision }}</dd>
                 <dt>is_subject_to_call_in</dt>
                 <dd>{{ decision.is_subject_to_call_in }}</dd>
-                <dt>source_url</dt>
-                <dd>{{ decision.source_url }}</dd>
-                <dt>source_etag</dt>
-                <dd>{{ decision.source_etag }}</dd>
-                <dt>source_last_modified</dt>
-                <dd>{{ decision.source_last_modified }}</dd>
             </dl>
         </article>
     </main>
