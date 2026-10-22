@@ -43,7 +43,9 @@ def fused_decision_search(decisions, chunks, query, vector_chunks=()):
     """
     decision_hits = list(decisions.search(query)[:DECISION_SEARCH_LIMIT])
     fts_chunks = list(
-        chunks.select_related("document").search(query)[:CHUNK_SEARCH_LIMIT]
+        chunks.select_related("document__decision").search(query)[
+            :CHUNK_SEARCH_LIMIT
+        ]
     )
     chunk_hits = fuse_chunks(fts_chunks, vector_chunks)
 
@@ -81,7 +83,9 @@ def decision_search(request):
 
     if form.is_valid():
         queryset = form.filter(
-            Decision.objects.all().prefetch_related("documents")
+            Decision.objects.select_related("council").prefetch_related(
+                "documents"
+            )
         )
 
         if query := form.cleaned_data["q"]:
@@ -95,7 +99,9 @@ def decision_search(request):
             # Semantic similarity is meaningless for an exact phrase match
             if form.cleaned_data["search_mode"] != "phrase":
                 embeddings = form.filter(
-                    Embedding.objects.select_related("chunk__document"),
+                    Embedding.objects.select_related(
+                        "chunk__document__decision"
+                    ),
                     prefix="chunk__document__decision__",
                 )
                 vector_chunks = [
