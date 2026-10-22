@@ -34,6 +34,14 @@ class EnrichedCouncillor(models.Model):
         related_name="enriched",
     )
 
+    elected_as = models.ForeignKey(
+        "YNRPartyMatch",
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name="elected_councillors",
+    )
+
     party_match = models.ForeignKey(
         "YNRPartyMatch",
         on_delete=models.SET_NULL,
@@ -108,6 +116,7 @@ class EEDivisionMatch(BaseMatch):
 
     division_id = models.IntegerField(unique=True)
     division_name = models.CharField(max_length=255, blank=True)
+    divisionset_id = models.IntegerField(null=True, blank=True)
 
 
 class YNRPartyMatch(BaseMatch):
