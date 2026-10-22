@@ -11,6 +11,11 @@
     <form method="get">
       {{ filter.form.non_field_errors }}
       {{ filter.form.council_id.as_field_group }}
+      <fieldset>
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_name_match %}
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_division_match %}
+{% include "councillors/includes/checkbox_field.html" with field=filter.form.missing_party_match %}
+      </fieldset>
       <details {% if filter.form.is_bound %}open{% endif %}>
         <summary >More Filters</summary>
         <div>
@@ -29,11 +34,6 @@
             {{ filter.form.raw_division.as_field_group }}
             {{ filter.form.raw_person.as_field_group }}
           </details>
-        </div>
-        <div class="grid">
-          {{ filter.form.name_match.as_field_group }}
-          {{ filter.form.division_match.as_field_group }}
-          {{ filter.form.party_match.as_field_group }}
         </div>
         <div class="grid">
           {{ filter.form.name_backend.as_field_group }}

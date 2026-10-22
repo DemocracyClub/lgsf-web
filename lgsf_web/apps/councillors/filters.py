@@ -6,7 +6,7 @@ from councillors.models import (
     YNRPartyMatch,
 )
 from django.core.validators import EMPTY_VALUES
-from django.forms import CheckboxSelectMultiple, RadioSelect
+from django.forms import CheckboxInput, CheckboxSelectMultiple
 
 
 class EmptyStringFilter(filters.BooleanFilter):
@@ -123,42 +123,25 @@ class CompareFilterSet(EnrichedCouncillorFilterSet):
         label="Raw Person Name",
     )
 
-    name_match = filters.BooleanFilter(
+    missing_name_match = filters.BooleanFilter(
         field_name="name_match",
         label="Missing Name?",
         lookup_expr="isnull",
-        widget=RadioSelect(
-            choices=(
-                ("true", "Yes"),
-                ("false", "No"),
-                ("unknown", "Unknown"),
-            ),
-        ),
+        widget=CheckboxInput(),
     )
-    division_match = filters.BooleanFilter(
+    missing_division_match = filters.BooleanFilter(
         field_name="division_match",
         label="Missing EE Division?",
         lookup_expr="isnull",
-        widget=RadioSelect(
-            choices=(
-                ("true", "Yes"),
-                ("false", "No"),
-                ("unknown", "Unknown"),
-            ),
-        ),
+        widget=CheckboxInput(),
     )
-    party_match = filters.BooleanFilter(
+    missing_party_match = filters.BooleanFilter(
         field_name="party_match",
         label="Missing Party?",
         lookup_expr="isnull",
-        widget=RadioSelect(
-            choices=(
-                ("true", "Yes"),
-                ("false", "No"),
-                ("unknown", "Unknown"),
-            ),
-        ),
+        widget=CheckboxInput(),
     )
+
     division_backend = backend_filter(
         "division_match", "EE Division match backend"
     )
