@@ -7,6 +7,7 @@ from core.forms import DecisionSearchForm
 from core.models import Chunk, Council, Decision, Document, Embedding
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
 from django.core.paginator import Paginator
+from django.db import connection, transaction
 from django.db.models import Count, IntegerField, Model, OuterRef, Subquery
 from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse
@@ -171,37 +172,42 @@ def similar_chunks(text, embeddings):
 
     `embeddings` is an Embedding queryset, already filtered as required.
     """
-    query_embedding = embed_text(text)
-    embeddings = (
-        embeddings.filter(model=TITAN_MODEL)
-        .annotate(distance=CosineDistance("embedding", query_embedding))
-        .order_by("distance")
-    )
 
-    results = []
-    offset = 0
+    with transaction.atomic(), connection.cursor() as cursor:
+        cursor.execute("SET LOCAL hnsw.ef_search = 400")
+        cursor.execute("SET LOCAL hnsw.iterative_scan = strict_order")
 
-    while len(results) < VECTOR_MAX_RESULTS:
-        batch = list(embeddings[offset : offset + VECTOR_BATCH_SIZE])
+        query_embedding = embed_text(text)
+        embeddings = (
+            embeddings.filter(model=TITAN_MODEL)
+            .annotate(distance=CosineDistance("embedding", query_embedding))
+            .order_by("distance")
+        )
 
-        if not batch:
-            break
+        results = []
+        offset = 0
 
-        for embedding in batch:
-            distance = embedding.distance
+        while len(results) < VECTOR_MAX_RESULTS:
+            batch = list(embeddings[offset : offset + VECTOR_BATCH_SIZE])
 
-            # Once we have enough results, look for a substantial
-            # deterioration in relevance.
-            if len(results) >= VECTOR_MIN_RESULTS_BEFORE_STOP:
-                gap = distance - results[-1]["distance"]
-                if gap >= VECTOR_DISTANCE_GAP_THRESHOLD:
-                    return results
+            if not batch:
+                break
 
-            results.append({"chunk": embedding.chunk, "distance": distance})
+            for embedding in batch:
+                distance = embedding.distance
 
-        offset += len(batch)
+                # Once we have enough results, look for a substantial
+                # deterioration in relevance.
+                if len(results) >= VECTOR_MIN_RESULTS_BEFORE_STOP:
+                    gap = distance - results[-1]["distance"]
+                    if gap >= VECTOR_DISTANCE_GAP_THRESHOLD:
+                        return results
 
-    return results
+                results.append({"chunk": embedding.chunk, "distance": distance})
+
+            offset += len(batch)
+
+        return results
 
 
 class DecisionDetailView(DetailView):
