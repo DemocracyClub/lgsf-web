@@ -66,6 +66,7 @@ class DecisionSearchForm(forms.Form):
         choices=[
             ("simple", "Simple search"),
             ("phrase", "Exact phrase"),
+            ("fuzzy", "Fuzzy"),
         ],
         initial="simple",
         widget=forms.RadioSelect,

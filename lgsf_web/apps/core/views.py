@@ -13,7 +13,7 @@ from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import DetailView, ListView
-from modelsearch.query import Phrase
+from modelsearch.query import Fuzzy, Phrase
 from pgvector.django import CosineDistance
 
 
@@ -98,6 +98,8 @@ def decision_search(request):
         if query := form.cleaned_data["q"]:
             if form.cleaned_data["search_mode"] == "phrase":
                 query = Phrase(query)
+            elif form.cleaned_data["search_mode"] == "fuzzy":
+                query = Fuzzy(query, unaccent=True)
             chunks = form.filter(
                 Chunk.objects.all(), prefix="document__decision__"
             )
