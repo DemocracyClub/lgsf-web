@@ -141,6 +141,29 @@ def decision_search(request):
     return render(request, "core/decision_search.html", context)
 
 
+def decision_makers(request):
+    councils = Council.objects.order_by("territory", "name")
+    council = None
+    makers = []
+
+    if code := request.GET.get("council"):
+        council = get_object_or_404(Council, pk=code)
+        makers = (
+            Decision.objects.filter(council=council)
+            .values("raw_decision_maker")
+            .annotate(count=Count("pk"))
+            .order_by("-count", "raw_decision_maker")
+        )
+
+    context = {
+        "councils": councils,
+        "council": council,
+        "makers": makers,
+        "total": sum(maker["count"] for maker in makers),
+    }
+    return render(request, "core/decision_makers.html", context)
+
+
 TITAN_MODEL = "amazon.titan-embed-text-v2:0"
 TITAN_DIMENSIONS = 1024
 
