@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
+import contextlib
 import os
 import sys
 from pathlib import Path
@@ -29,8 +30,16 @@ def root(*x):
 sys.path.insert(0, str(root("apps")))
 
 
+def str_bool_to_bool(str_bool):
+    if not str_bool:
+        return False
+    return str_bool in ["1", "True", "true", "TRUE"]
+
+
 # Set DC_ENVIRONMENT
 DC_ENVIRONMENT = os.environ.get("DC_ENVIRONMENT", "local")
+
+AWS_REGION = "eu-west-2"
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
@@ -194,6 +203,21 @@ EMBEDDINGS_BATCH_JOB_QUEUE = os.environ.get(
 )
 EMBEDDINGS_BATCH_JOB_DEFINITION = os.environ.get(
     "EMBEDDINGS_BATCH_JOB_DEFINITION", "lgsf-embeddings"
+)
+
+
+# OpenSearch settings
+OPENSEARCH_URL = os.environ.get("OPENSEARCH_URL", "https://localhost:9200")
+
+OPENSEARCH_HTTP_AUTH = None
+with contextlib.suppress(KeyError):
+    OPENSEARCH_HTTP_AUTH = (
+        os.environ["OPENSEARCH_USER"],
+        os.environ["OPENSEARCH_PASSWORD"],
+    )
+
+OPENSEARCH_VERIFY_TLS = str_bool_to_bool(
+    os.environ.get("OPENSEARCH_VERIFY_TLS", "true")
 )
 
 

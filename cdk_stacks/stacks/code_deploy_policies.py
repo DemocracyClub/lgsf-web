@@ -120,6 +120,13 @@ CODE_DEPLOY_EC2_POLICY = {
                 "arn:aws:bedrock:*::foundation-model/amazon.titan-embed-text-v2:0",
             ],
         },
+        {
+            "Action": ["aoss:APIAccessAll"],
+            "Effect": "Allow",
+            "Resource": [
+                "arn:aws:aoss:eu-west-2:*:collection/*",
+            ],
+        },
     ],
 }
 
