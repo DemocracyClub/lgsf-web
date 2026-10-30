@@ -7,6 +7,7 @@ For each <filename>.pdf, looks for:
 
 Chunks are matched to a Document by Document.content_hash == chunk.metadata.content_hash.
 Existing chunks (and their embeddings) for a matched document are replaced.
+Every DecisionEmbedding is then remade, with compute_decision_embeddings.
 
 Usage:
     ./manage.py import_embeddings                # all councils found in ./data
@@ -23,6 +24,7 @@ from core.management.helpers import (
     parse_date,
 )
 from core.models import Chunk, Document, Embedding
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -86,6 +88,7 @@ class Command(BaseCommand):
                 f"Imported {total_chunks} chunks and {total_embeddings} embeddings"
             )
         )
+        call_command("compute_decision_embeddings", stdout=self.stdout)
 
     @staticmethod
     def discover_councils():
