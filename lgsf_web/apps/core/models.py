@@ -259,6 +259,29 @@ class Embedding(models.Model):
         return f"{self.model}: {self.chunk_id}"
 
 
+class DecisionEmbedding(models.Model):
+    """
+    The mean of a decision's chunk embeddings, less its council's mean.
+
+    Without taking away the council's mean, a decision's nearest
+    neighbours are mostly from the same council, alike in their templates
+    and phrasing rather than their subject. Made by
+    compute_decision_embeddings.
+    """
+
+    decision = models.OneToOneField(
+        Decision, related_name="embedding", on_delete=models.CASCADE
+    )
+    model = models.CharField(max_length=255)
+    # No HNSW index: at a few thousand rows a sequential scan takes a
+    # few milliseconds, and keeping the index up to date made
+    # compute_decision_embeddings take ten times as long.
+    embedding = VectorField(dimensions=1024)
+
+    def __str__(self):
+        return f"{self.model}: {self.decision_id}"
+
+
 class Council(models.Model):
     # a bad representation of a council that is definitely wrong
     code = models.CharField(max_length=3, blank=False, primary_key=True)
