@@ -3,8 +3,9 @@ import datetime
 import numpy
 import pytest
 from core.models import Chunk, Decision, DecisionEmbedding, Document, Embedding
-from core.views import TITAN_MODEL
+from core.views import TITAN_MODEL, similar_decisions
 from django.core.management import call_command
+from django.urls import reverse
 
 
 def vector(**components):
@@ -104,3 +105,45 @@ def test_compute_replaces_existing_embeddings():
             "decision__raw_identifier", flat=True
         )
     ) == {"2", "3"}
+
+
+@pytest.mark.django_db
+def test_similar_decisions_nearest_first_without_itself():
+    decisions = {}
+    for identifier, v in {
+        "target": vector(x0=1),
+        "far": vector(x1=1),
+        "near": vector(x0=1, x1=0.1),
+    }.items():
+        decisions[identifier] = make_decision("MAN", identifier)
+        DecisionEmbedding.objects.create(
+            decision=decisions[identifier], model=TITAN_MODEL, embedding=v
+        )
+    make_decision("MAN", "no-embedding")
+
+    assert similar_decisions(decisions["target"]) == [
+        decisions["near"],
+        decisions["far"],
+    ]
+
+
+@pytest.mark.django_db
+def test_similar_decisions_empty_without_embedding():
+    assert similar_decisions(make_decision("MAN", "1")) == []
+
+
+@pytest.mark.django_db
+def test_decision_detail_lists_similar_decisions(client):
+    target = make_decision("MAN", "target")
+    similar = make_decision("MAN", "similar")
+    for decision, v in ((target, vector(x0=1)), (similar, vector(x1=1))):
+        DecisionEmbedding.objects.create(
+            decision=decision, model=TITAN_MODEL, embedding=v
+        )
+
+    response = client.get(reverse("core:decision-detail", args=[target.pk]))
+
+    assert response.context["similar_decisions"] == [similar]
+    assert reverse("core:decision-detail", args=[similar.pk]) in (
+        response.content.decode()
+    )

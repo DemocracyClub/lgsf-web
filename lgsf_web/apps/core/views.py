@@ -4,7 +4,14 @@ from collections import defaultdict
 
 import boto3
 from core.forms import DecisionSearchForm
-from core.models import Chunk, Council, Decision, Document, Embedding
+from core.models import (
+    Chunk,
+    Council,
+    Decision,
+    DecisionEmbedding,
+    Document,
+    Embedding,
+)
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
 from django.core.paginator import Paginator
 from django.db import connection, transaction
@@ -235,10 +242,38 @@ def similar_chunks(text, embeddings):
         return results
 
 
+SIMILAR_DECISIONS_COUNT = 10
+
+
+def similar_decisions(decision):
+    """
+    The decisions whose DecisionEmbedding is nearest `decision`'s, closest
+    first. Empty if `decision` has no DecisionEmbedding.
+    """
+    try:
+        embedding = decision.embedding
+    except DecisionEmbedding.DoesNotExist:
+        return []
+
+    neighbours = (
+        DecisionEmbedding.objects.filter(model=embedding.model)
+        .exclude(pk=embedding.pk)
+        .select_related("decision__council")
+        .annotate(distance=CosineDistance("embedding", embedding.embedding))
+        .order_by("distance")[:SIMILAR_DECISIONS_COUNT]
+    )
+    return [neighbour.decision for neighbour in neighbours]
+
+
 class DecisionDetailView(DetailView):
     model = Decision
     template_name = "core/decision_detail.html"
     queryset = Decision.objects.all().prefetch_related("documents")
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["similar_decisions"] = similar_decisions(self.object)
+        return context
 
 
 def councils_with_counts():

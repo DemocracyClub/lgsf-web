@@ -24,6 +24,18 @@
                 </ul>
             {% endif %}
 
+            {% if similar_decisions %}
+                <h2>Similar decisions</h2>
+                <ul>
+                    {% for similar in similar_decisions %}
+                        <li>
+                            <a href="{% url 'core:decision-detail' similar.pk %}">{{ similar.raw_title }}</a>
+                            <small>{{ similar.council }}, {{ similar.raw_date }}</small>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+
             <h2>Meta</h2>
             <dl>
                 <dt>Council</dt>
