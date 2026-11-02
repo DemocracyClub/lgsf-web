@@ -14,6 +14,7 @@ import contextlib
 import os
 import sys
 from pathlib import Path
+from urllib.parse import urlparse
 
 from dc_utils.settings.pipeline import *
 from dc_utils.settings.pipeline import get_pipeline_settings
@@ -219,6 +220,11 @@ with contextlib.suppress(KeyError):
 OPENSEARCH_VERIFY_TLS = str_bool_to_bool(
     os.environ.get("OPENSEARCH_VERIFY_TLS", "true")
 )
+
+OPENSEARCH_AOSS = False
+host = urlparse(OPENSEARCH_URL).hostname or ""
+if ".aoss." in host:
+    OPENSEARCH_AOSS = True
 
 
 if sentry_dsn := os.environ.get("SENTRY_DSN"):

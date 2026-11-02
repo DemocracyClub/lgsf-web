@@ -284,7 +284,9 @@ class Command(BaseCommand):
             if (indexed + failed) % BULK_SIZE == 0:
                 self.stdout.write(f"{indexed + failed} objects sent")
 
-        client.indices.refresh(index=INDEX_NAME)
+        # Serverless has no refresh API; it refreshes on its own.
+        if not settings.OPENSEARCH_AOSS:
+            client.indices.refresh(index=INDEX_NAME)
         self.stdout.write(
             self.style.SUCCESS(f"Indexed {indexed} objects, {failed} failed")
         )
