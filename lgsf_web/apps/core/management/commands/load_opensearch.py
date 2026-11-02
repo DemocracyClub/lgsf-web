@@ -37,7 +37,10 @@ from opensearchpy import helpers
 LIMIT = None
 
 
-BULK_SIZE = 500
+BULK_SIZE = 100
+# Serverless throttles on payload size too, so cap bytes as well as count.
+MAX_CHUNK_BYTES = 5 * 1024 * 1024
+REQUEST_TIMEOUT = 120
 EMBEDDING_DIMENSIONS = 1024
 
 # Weights are for the queries in order: full text, then vector.
@@ -240,9 +243,18 @@ class Command(BaseCommand):
         client.indices.create(index=INDEX_NAME, body=INDEX_BODY)
         self.stdout.write(f"Created index {INDEX_NAME}")
 
-        chunks = Chunk.objects.select_related(
-            "document__decision", "embedding"
-        ).order_by("pk")
+        # Defer the big columns: otherwise every row drags in its whole
+        # Document.text and Decision.text, which is what exhausts memory.
+        chunks = (
+            Chunk.objects.select_related("document__decision", "embedding")
+            .defer(
+                "context",
+                "metadata",
+                "document__text",
+                "document__decision__text",
+            )
+            .order_by("pk")
+        )
         decisions = Decision.objects.order_by("pk")
         if LIMIT is not None:
             chunks = chunks[:LIMIT]
@@ -257,6 +269,10 @@ class Command(BaseCommand):
             client,
             actions,
             chunk_size=BULK_SIZE,
+            max_chunk_bytes=MAX_CHUNK_BYTES,
+            request_timeout=REQUEST_TIMEOUT,
+            max_retries=4,
+            initial_backoff=2,
             raise_on_error=False,
             raise_on_exception=False,
         ):
