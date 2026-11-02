@@ -174,7 +174,7 @@ workflows:
           dc-environment: development
           requires:
             - cdk_synth_development
-          filters: { branches: { only: [main] } }
+          filters: { branches: { only: [main, elastic20261029] } }
           context: [deployment-development-lgsf]
 
       - code_deploy:
@@ -182,5 +182,5 @@ workflows:
           dc-environment: development
           requires:
             - cdk_deploy_development
-          filters: { branches: { only: [main] } }
+          filters: { branches: { only: [main, elastic20261029] } }
           context: [deployment-development-lgsf]
