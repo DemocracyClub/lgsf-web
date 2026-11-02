@@ -143,7 +143,6 @@ INDEX_BODY = {
                 "dimension": EMBEDDING_DIMENSIONS,
                 "method": {
                     "name": "hnsw",
-                    "engine": "lucene",
                     "space_type": "cosinesimil",
                     "parameters": {"m": 16, "ef_construction": 64},
                 },
@@ -223,7 +222,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         client = opensearch_client()
         try:
-            client.info()
+            client.cat.indices()
         except Exception as e:
             raise CommandError(
                 f"Can't reach OpenSearch at {settings.OPENSEARCH_URL}: {e}"
