@@ -16,7 +16,7 @@ def opensearch_client():
     http_auth = settings.OPENSEARCH_HTTP_AUTH
     extra = {}
     host = urlparse(settings.OPENSEARCH_URL).hostname or ""
-    if host.endswith(".aoss.amazonaws.com"):
+    if ".aoss." in host:
         # OpenSearch Serverless needs SigV4-signed requests.
         http_auth = AWSV4SignerAuth(
             boto3.Session().get_credentials(),
