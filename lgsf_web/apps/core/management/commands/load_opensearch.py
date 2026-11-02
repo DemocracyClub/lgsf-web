@@ -136,14 +136,13 @@ INDEX_BODY = {
             # Full text. raw_title is only set on decisions.
             "raw_title": {"type": "text", "analyzer": "english_folded"},
             "text": {"type": "text", "analyzer": "english_folded"},
-            # Vector. Lucene supports filtering during the kNN search, and
-            # cosine similarity (Titan's vectors are normalised).
+            # Vector
             "embedding": {
                 "type": "knn_vector",
                 "dimension": EMBEDDING_DIMENSIONS,
                 "method": {
                     "name": "hnsw",
-                    "engine": "lucene",
+                    # "engine": "lucene",
                     "space_type": "cosinesimil",
                     "parameters": {"m": 16, "ef_construction": 64},
                 },
@@ -223,7 +222,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         client = opensearch_client()
         try:
-            client.info()
+            client.cat.indices()
         except Exception as e:
             raise CommandError(
                 f"Can't reach OpenSearch at {settings.OPENSEARCH_URL}: {e}"
@@ -269,7 +268,9 @@ class Command(BaseCommand):
             if (indexed + failed) % BULK_SIZE == 0:
                 self.stdout.write(f"{indexed + failed} objects sent")
 
-        client.indices.refresh(index=INDEX_NAME)
+        # Serverless has no refresh API; it refreshes on its own.
+        if not settings.OPENSEARCH_AOSS:
+            client.indices.refresh(index=INDEX_NAME)
         self.stdout.write(
             self.style.SUCCESS(f"Indexed {indexed} objects, {failed} failed")
         )
