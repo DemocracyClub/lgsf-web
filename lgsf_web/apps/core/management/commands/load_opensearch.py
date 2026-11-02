@@ -136,13 +136,13 @@ INDEX_BODY = {
             # Full text. raw_title is only set on decisions.
             "raw_title": {"type": "text", "analyzer": "english_folded"},
             "text": {"type": "text", "analyzer": "english_folded"},
-            # Vector. Lucene supports filtering during the kNN search, and
-            # cosine similarity (Titan's vectors are normalised).
+            # Vector
             "embedding": {
                 "type": "knn_vector",
                 "dimension": EMBEDDING_DIMENSIONS,
                 "method": {
                     "name": "hnsw",
+                    # "engine": "lucene",
                     "space_type": "cosinesimil",
                     "parameters": {"m": 16, "ef_construction": 64},
                 },
