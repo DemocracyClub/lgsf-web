@@ -121,9 +121,7 @@ def search_hits(data):
                                 "vector": embed_text(query),
                                 "k": KNN_K,
                                 "filter": {"bool": {"filter": filters}},
-                                "method_parameters": {
-                                    "ef_search": 500
-                                }
+                                "method_parameters": {"ef_search": 500},
                             }
                         }
                     },
