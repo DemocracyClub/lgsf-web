@@ -152,6 +152,7 @@ INDEX_BODY = {
                     "space_type": "cosinesimil",
                     "parameters": {"m": 16, "ef_construction": 64},
                 },
+                "compression_level": "1x",
             },
             # Decision filters
             "council": {"type": "keyword"},
