@@ -13,7 +13,7 @@
         <blockquote>
             {{ chunk|chunk_text:query|linebreaks }}
             <footer>
-                <a href="{{ chunk.document.s3_url }}" target="_blank">{{ chunk.document }}</a>
+                <a href="{{ chunk.document.s3_url }}#search=&quot;{{ query }}&quot;" target="_blank">{{ chunk.document }}</a>
             </footer>
         </blockquote>
     {% endfor %}
