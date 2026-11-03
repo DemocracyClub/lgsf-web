@@ -1,6 +1,5 @@
 import datetime
 import json
-from collections import defaultdict
 
 import boto3
 from core.forms import DecisionSearchForm
@@ -10,17 +9,22 @@ from core.models import (
     Decision,
     DecisionEmbedding,
     Document,
-    Embedding,
+)
+from core.opensearch import (
+    CHUNK,
+    DECISION,
+    INDEX_NAME,
+    SEARCH_PIPELINE,
+    opensearch_client,
 )
 from councillors.models import EnrichedCouncillor, ScrapedCouncillor
+from django.conf import settings
 from django.core.paginator import Paginator
-from django.db import connection, transaction
 from django.db.models import Count, IntegerField, Model, OuterRef, Subquery
 from django.db.models.functions import Coalesce, TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import DetailView, ListView
-from modelsearch.query import Fuzzy, Phrase
 from pgvector.django import CosineDistance
 
 
@@ -28,66 +32,160 @@ def hello_world(request):
     return HttpResponse("Hello, world.")
 
 
-RRF_K = 60
-DECISION_SEARCH_LIMIT = 100
-CHUNK_SEARCH_LIMIT = 1000
 MAX_CHUNKS_PER_DECISION = 5
 SEARCH_RESULTS_PER_PAGE = 20
+# How many chunk/decision hits to fetch, before grouping them by decision
+MAX_SEARCH_HITS = 1000
+KNN_K = 400
+DECISION_BOOST = 3
+# Each lower-ranked chunk counts this much of the one above it
+CHUNK_RANK_DECAY = 0.7
 
 
-def fuse_chunks(*ranked_lists):
-    """Reciprocal rank fusion of ranked Chunk lists, de-duplicated by pk."""
-    scores = defaultdict(float)
-    by_pk = {}
-    for hits in ranked_lists:
-        for rank, chunk in enumerate(hits, start=1):
-            scores[chunk.pk] += 1 / (RRF_K + rank)
-            by_pk.setdefault(chunk.pk, chunk)
-    return [by_pk[pk] for pk in sorted(scores, key=scores.get, reverse=True)]
+def search_filters(data):
+    filters = []
+    for field in ("council", "status"):
+        if data.get(field):
+            filters.append({"term": {field: data[field]}})
+    for field in (
+        "is_key_decision",
+        "is_officer_decision",
+        "is_subject_to_call_in",
+    ):
+        if data.get(field):
+            filters.append({"term": {field: True}})
+
+    date_range = {}
+    if data.get("publication_date_from"):
+        date_range["gte"] = data["publication_date_from"].isoformat()
+    if data.get("publication_date_to"):
+        date_range["lte"] = data["publication_date_to"].isoformat()
+    if date_range:
+        filters.append({"range": {"publication_date": date_range}})
+    return filters
 
 
-def fused_decision_search(decisions, chunks, query, vector_chunks=()):
-    """
-    Reciprocal rank fusion of Decision and Chunk search results.
+def full_text_query(query, mode, filters):
+    def match(fields):
+        if mode == "phrase":
+            return {
+                "multi_match": {
+                    "query": query,
+                    "fields": fields,
+                    "type": "phrase",
+                }
+            }
+        multi_match = {"query": query, "fields": fields}
+        if mode == "fuzzy":
+            # Accents are folded by the field's analyzer
+            multi_match["fuzziness"] = "AUTO"
+        return {"multi_match": multi_match}
 
-    Full-text and vector Chunk hits are fused first, then fused with the
-    Decision hits. Returns Decisions ordered by fused score, each with
-    `rrf_score` and `matched_chunks` attributes. Decisions matched only
-    via their chunks are included.
-    """
-    decision_hits = list(decisions.search(query)[:DECISION_SEARCH_LIMIT])
-    fts_chunks = list(
-        chunks.select_related("document__decision")
-        .defer("document__text")
-        .search(query)[:CHUNK_SEARCH_LIMIT]
+    decision_fields = [f"raw_title^{DECISION_BOOST}", f"text^{DECISION_BOOST}"]
+    return {
+        "bool": {
+            # "text" is on both decisions and chunks, so each is matched
+            # separately to boost only the decisions
+            "should": [
+                {
+                    "bool": {
+                        "filter": [{"term": {"object_type": DECISION}}],
+                        "must": [match(decision_fields)],
+                    }
+                },
+                {
+                    "bool": {
+                        "filter": [{"term": {"object_type": CHUNK}}],
+                        "must": [match(["text"])],
+                    }
+                },
+            ],
+            "minimum_should_match": 1,
+            "filter": filters,
+        }
+    }
+
+
+def search_hits(data):
+    query = data["q"]
+    mode = data["search_mode"]
+    filters = search_filters(data)
+    text_query = full_text_query(query, mode, filters)
+
+    request_kwargs = {}
+    if mode == "phrase":
+        # Exact phrases have no vector equivalent
+        search_query = text_query
+    else:
+        search_query = {
+            "hybrid": {
+                # "pagination_depth": KNN_K,
+                "queries": [
+                    text_query,
+                    {
+                        "knn": {
+                            "embedding": {
+                                "vector": embed_text(query),
+                                "k": KNN_K,
+                                "filter": {"bool": {"filter": filters}},
+                                "method_parameters": {"ef_search": 500},
+                            }
+                        }
+                    },
+                ]
+            }
+        }
+        request_kwargs["params"] = {"search_pipeline": SEARCH_PIPELINE}
+
+    response = opensearch_client().search(
+        index=INDEX_NAME,
+        body={"size": MAX_SEARCH_HITS, "query": search_query},
+        **request_kwargs,
     )
-    chunk_hits = fuse_chunks(fts_chunks, vector_chunks)
 
-    scores = defaultdict(float)
-    matched_chunks = defaultdict(list)
+    return response["hits"]["hits"]
 
-    for rank, decision in enumerate(decision_hits, start=1):
-        scores[decision.pk] += 1 / (RRF_K + rank)
 
-    for rank, chunk in enumerate(chunk_hits, start=1):
-        decision_id = chunk.document.decision_id
-        # Only a decision's best chunks count, so many weak chunks can't
-        # outrank one strong chunk. Chunks arrive in rank order.
-        if len(matched_chunks[decision_id]) < MAX_CHUNKS_PER_DECISION:
-            matched_chunks[decision_id].append(chunk)
-            scores[decision_id] += 1 / (RRF_K + rank)
+def decisions_from_hits(hits):
+    """
+    Decisions ranked by the decision's own score plus the scores of its top
+    MAX_CHUNKS_PER_DECISION chunks, each weighted down by its rank, with
+    .matched_chunks set to those chunks. Hits are expected in descending
+    score order.
+    """
+    chunk_ids_by_decision = {}
+    scores = {}
+    for hit in hits:
+        decision_id = hit["_source"]["decision_id"]
+        chunk_ids = chunk_ids_by_decision.setdefault(decision_id, [])
+        scores.setdefault(decision_id, 0)
+        if hit["_source"]["object_type"] != CHUNK:
+            scores[decision_id] += hit["_score"]
+        elif len(chunk_ids) < MAX_CHUNKS_PER_DECISION:
+            # Hits are in descending score order, so len() is the chunk's rank
+            weight = CHUNK_RANK_DECAY ** len(chunk_ids)
+            chunk_ids.append(int(hit["_id"].split("-", 1)[1]))
+            scores[decision_id] += hit["_score"] * weight
 
-    by_pk = {decision.pk: decision for decision in decision_hits}
-    missing = scores.keys() - by_pk.keys()
-    by_pk.update(decisions.in_bulk(missing))
+    decisions = Decision.objects.select_related("council").in_bulk(
+        chunk_ids_by_decision
+    )
+    chunks = Chunk.objects.select_related("document").in_bulk(
+        [pk for pks in chunk_ids_by_decision.values() for pk in pks]
+    )
 
     results = []
-    for pk in sorted(scores, key=scores.get, reverse=True):
-        # in_bulk respects the filters, so a missing pk was filtered out
-        if decision := by_pk.get(pk):
-            decision.rrf_score = scores[pk]
-            decision.matched_chunks = matched_chunks.get(pk, [])
-            results.append(decision)
+    for decision_id, chunk_ids in chunk_ids_by_decision.items():
+        # The index can be out of date with the database
+        if decision_id not in decisions:
+            continue
+        decision = decisions[decision_id]
+        decision.matched_chunks = [
+            chunks[pk] for pk in chunk_ids if pk in chunks
+        ]
+        decision.search_score = scores[decision_id]
+        results.append(decision)
+    results.sort(key=lambda d: d.search_score, reverse=True)
     return results
 
 
@@ -96,42 +194,7 @@ def decision_search(request):
     results = []
 
     if form.is_valid():
-        queryset = form.filter(
-            Decision.objects.select_related("council").prefetch_related(
-                "documents"
-            )
-        )
-
-        if query := form.cleaned_data["q"]:
-            if form.cleaned_data["search_mode"] == "phrase":
-                query = Phrase(query)
-            elif form.cleaned_data["search_mode"] == "fuzzy":
-                query = Fuzzy(query, unaccent=True)
-            chunks = form.filter(
-                Chunk.objects.all(), prefix="document__decision__"
-            )
-
-            vector_chunks = []
-            # Semantic similarity is meaningless for an exact phrase match
-            if form.cleaned_data["search_mode"] != "phrase":
-                embeddings = form.filter(
-                    Embedding.objects.select_related(
-                        "chunk__document__decision"
-                    ).defer("chunk__document__text"),
-                    prefix="chunk__document__decision__",
-                )
-                vector_chunks = [
-                    hit["chunk"]
-                    for hit in similar_chunks(
-                        form.cleaned_data["q"], embeddings
-                    )
-                ]
-
-            results = fused_decision_search(
-                queryset, chunks, query, vector_chunks
-            )
-        else:
-            results = queryset.order_by("-publication_date", "pk")
+        results = decisions_from_hits(search_hits(form.cleaned_data))
 
     page = Paginator(results, SEARCH_RESULTS_PER_PAGE).get_page(
         request.GET.get("page")
@@ -176,7 +239,7 @@ TITAN_DIMENSIONS = 1024
 
 
 def embed_text(text):
-    client = boto3.client("bedrock-runtime", region_name="eu-west-2")
+    client = boto3.client("bedrock-runtime", region_name=settings.AWS_REGION)
     response = client.invoke_model(
         modelId=TITAN_MODEL,
         body=json.dumps(
@@ -190,56 +253,6 @@ def embed_text(text):
         accept="application/json",
     )
     return json.loads(response["body"].read())["embedding"]
-
-
-VECTOR_BATCH_SIZE = 10
-VECTOR_MAX_RESULTS = 100
-VECTOR_MIN_RESULTS_BEFORE_STOP = 5
-VECTOR_DISTANCE_GAP_THRESHOLD = 0.01
-
-
-def similar_chunks(text, embeddings):
-    """
-    Nearest chunks to `text` as [{"chunk", "distance"}, ...], closest first.
-
-    `embeddings` is an Embedding queryset, already filtered as required.
-    """
-
-    with transaction.atomic(), connection.cursor() as cursor:
-        cursor.execute("SET LOCAL hnsw.ef_search = 400")
-        cursor.execute("SET LOCAL hnsw.iterative_scan = strict_order")
-
-        query_embedding = embed_text(text)
-        embeddings = (
-            embeddings.filter(model=TITAN_MODEL)
-            .annotate(distance=CosineDistance("embedding", query_embedding))
-            .order_by("distance")
-        )
-
-        results = []
-        offset = 0
-
-        while len(results) < VECTOR_MAX_RESULTS:
-            batch = list(embeddings[offset : offset + VECTOR_BATCH_SIZE])
-
-            if not batch:
-                break
-
-            for embedding in batch:
-                distance = embedding.distance
-
-                # Once we have enough results, look for a substantial
-                # deterioration in relevance.
-                if len(results) >= VECTOR_MIN_RESULTS_BEFORE_STOP:
-                    gap = distance - results[-1]["distance"]
-                    if gap >= VECTOR_DISTANCE_GAP_THRESHOLD:
-                        return results
-
-                results.append({"chunk": embedding.chunk, "distance": distance})
-
-            offset += len(batch)
-
-        return results
 
 
 SIMILAR_DECISIONS_COUNT = 10
