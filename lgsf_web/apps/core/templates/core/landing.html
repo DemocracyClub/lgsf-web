@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Home</title>
+
+    <!-- TODO: not this -->
+    <link href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" rel="stylesheet">
+</head>
+<body>
+    <main class="container">
+        <h1>Experiments</h1>
+        <ul>
+            <li><a href="{% url 'council-list' %}">councils</a></li>
+            <li><a href="{% url 'councillors:landing' %}">councillors</a></li>
+            <li><a href="{% url 'core:decision-search' %}">decision search</a></li>
+            <li><a href="{% url 'core:decision-makers' %}">decision makers</a></li>
+        </ul>
+    </main>
+</body>
+</html>

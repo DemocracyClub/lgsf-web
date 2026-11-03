@@ -22,14 +22,13 @@ from django.conf import settings
 from django.core.paginator import Paginator
 from django.db.models import Count, IntegerField, Model, OuterRef, Subquery
 from django.db.models.functions import Coalesce, TruncMonth
-from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
 from django.views.generic import DetailView, ListView
 from pgvector.django import CosineDistance
 
 
 def hello_world(request):
-    return HttpResponse("Hello, world.")
+    return render(request, "core/landing.html")
 
 
 MAX_CHUNKS_PER_DECISION = 5
