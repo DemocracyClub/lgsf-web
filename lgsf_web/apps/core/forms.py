@@ -64,10 +64,9 @@ class DecisionSearchForm(forms.Form):
     search_mode = forms.ChoiceField(
         label="Search mode",
         choices=[
-            ("simple", "Simple search"),
+            ("fuzzy", "Fuzzy search"),
             ("phrase", "Exact phrase"),
-            ("fuzzy", "Fuzzy"),
         ],
-        initial="simple",
+        initial="fuzzy",
         widget=forms.RadioSelect,
     )

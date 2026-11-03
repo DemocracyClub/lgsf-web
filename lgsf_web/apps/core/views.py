@@ -75,11 +75,13 @@ def full_text_query(query, mode, filters):
                     "type": "phrase",
                 }
             }
-        multi_match = {"query": query, "fields": fields}
-        if mode == "fuzzy":
-            # Accents are folded by the field's analyzer
-            multi_match["fuzziness"] = "AUTO"
-        return {"multi_match": multi_match}
+        return {
+            "multi_match": {
+                "query": query,
+                "fields": fields,
+                "fuzziness": "AUTO",
+            }
+        }
 
     decision_fields = [f"raw_title^{DECISION_BOOST}", f"text^{DECISION_BOOST}"]
     return {
